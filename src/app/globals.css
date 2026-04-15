@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-vazirmatn: var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+  --font-poppins: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Alias the exact Figma font family names to available web fonts.
+ * Yekan Bakh and Buenos Aires Trial are proprietary; we use the closest
+ * visually-similar web fonts (Vazirmatn for Persian, Poppins for Latin). */
+@font-face {
+  font-family: "Yekan_Bakh:Light";
+  src: local("Vazirmatn Light"), local("Vazirmatn-Light");
+  font-weight: 300;
+  unicode-range: U+0600-06FF, U+200C-200E, U+FB50-FDFF, U+0020-007E;
+}
+@font-face {
+  font-family: "Yekan_Bakh:Regular";
+  src: local("Vazirmatn"), local("Vazirmatn-Regular");
+  font-weight: 400;
+  unicode-range: U+0600-06FF, U+200C-200E, U+FB50-FDFF, U+0020-007E;
+}
+@font-face {
+  font-family: "Yekan_Bakh:Medium";
+  src: local("Vazirmatn Medium"), local("Vazirmatn-Medium");
+  font-weight: 500;
+  unicode-range: U+0600-06FF, U+200C-200E, U+FB50-FDFF, U+0020-007E;
+}
+@font-face {
+  font-family: "Yekan_Bakh:Bold";
+  src: local("Vazirmatn Bold"), local("Vazirmatn-Bold");
+  font-weight: 700;
+  unicode-range: U+0600-06FF, U+200C-200E, U+FB50-FDFF, U+0020-007E;
+}
+@font-face {
+  font-family: "Yekan_Bakh:Heavy";
+  src: local("Vazirmatn Black"), local("Vazirmatn-Black");
+  font-weight: 900;
+  unicode-range: U+0600-06FF, U+200C-200E, U+FB50-FDFF, U+0020-007E;
+}
+
+@font-face {
+  font-family: "Buenos_Aires_Trial:Light";
+  src: local("Poppins Light"), local("Poppins-Light");
+  font-weight: 300;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-vazirmatn);
+  color: #010514;
+}
+
+/* The Figma Landing canvas is 1920×10518. Fit it to any viewport with a
+ * CSS variable driven transform: scale() so absolute positions stay exact. */
+.figma-canvas {
+  position: relative;
+  width: 1920px;
+  height: 10518px;
+  transform-origin: top right;
+  transform: scale(var(--figma-scale, 1));
+}
+
+.figma-stage {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
 }

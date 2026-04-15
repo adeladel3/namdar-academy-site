@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 658.035 405.914" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 67">
+<foreignObject x="-80" y="-79.9999" width="818.035" height="565.914"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(40px);clip-path:url(#bgblur_0_0_84_clip_path);height:100%;width:100%"></div></foreignObject><rect id="Rectangle 49" data-figma-bg-blur-radius="80" y="6.97545e-05" width="658.035" height="405.914" rx="20" fill="var(--fill-0, #F4F4F4)" fill-opacity="0.6"/>
+<foreignObject x="-80" y="-79.9999" width="818.035" height="188.574"><div xmlns="http://www.w3.org/1999/xhtml" style="backdrop-filter:blur(40px);clip-path:url(#bgblur_1_0_84_clip_path);height:100%;width:100%"></div></foreignObject><path id="Rectangle 50" data-figma-bg-blur-radius="80" d="M0 20.0001C0 8.95437 8.95431 6.97545e-05 20 6.97545e-05H638.035C649.08 6.97545e-05 658.035 8.95437 658.035 20.0001V28.5737H0V20.0001Z" fill="var(--fill-0, #EAEAEA)" fill-opacity="0.6"/>
+<circle id="Ellipse 16" cx="28.5934" cy="13.8762" r="5.88281" fill="var(--fill-0, #EE6767)"/>
+<circle id="Ellipse 17" cx="48.763" cy="13.8762" r="5.88281" fill="var(--fill-0, #F7C566)"/>
+<circle id="Ellipse 18" cx="68.9326" cy="13.8762" r="5.88281" fill="var(--fill-0, #5BEB7B)"/>
+</g>
+<defs>
+<clipPath id="bgblur_0_0_84_clip_path" transform="translate(80 79.9999)"><rect y="6.97545e-05" width="658.035" height="405.914" rx="20"/>
+</clipPath><clipPath id="bgblur_1_0_84_clip_path" transform="translate(80 79.9999)"><path d="M0 20.0001C0 8.95437 8.95431 6.97545e-05 20 6.97545e-05H638.035C649.08 6.97545e-05 658.035 8.95437 658.035 20.0001V28.5737H0V20.0001Z"/>
+</clipPath></defs>
+</svg>

@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# نامدار آکادمی — Namdar Academy
 
-## Getting Started
+سایت رسمی **نامدار آکادمی**، مرجع آموزش ترید و سرمایه‌گذاری با تدریس استاد امیرحسین نام‌آور.
 
-First, run the development server:
+Built with **Next.js 16** (App Router + Turbopack), **Tailwind v4**, **TypeScript**, **Vazirmatn** (Persian font), and **RTL layout**.
+
+## شروع کار
 
 ```bash
+npm install
+cp .env.example .env.local
+# set SESSION_SECRET in .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+سپس به [http://localhost:3000](http://localhost:3000) مراجعه کنید.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ساختار پروژه
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├─ app/
+│  ├─ (site)/              # صفحات با هدر/فوتر مشترک
+│  │  ├─ about/
+│  │  ├─ articles/
+│  │  ├─ contact/
+│  │  ├─ courses/
+│  │  ├─ dashboard/
+│  │  ├─ login/
+│  │  └─ signup/
+│  ├─ api/                 # API routes (auth, checkout, contact, ...)
+│  ├─ layout.tsx           # RTL + فونت فارسی
+│  └─ page.tsx             # لندینگ (embed فیگما)
+├─ components/
+│  ├─ Landing.tsx          # کل لندینگ با absolute positioning دقیق از فیگما
+│  ├─ FigmaStage.tsx       # مقیاس‌گذاری واکنشگرا 1920×10518 → viewport
+│  ├─ LandingNavOverlay.tsx
+│  ├─ SiteHeader.tsx
+│  └─ SiteFooter.tsx
+├─ data/
+│  ├─ courses.ts           # لیست دوره‌ها
+│  └─ articles.ts          # لیست مقالات
+└─ lib/
+   ├─ auth.ts              # Session امضاشده HMAC در cookie
+   └─ otp-store.ts         # ذخیره OTP/کاربران/سفارش‌ها (in-memory؛ باید با DB جایگزین شود)
 
-## Learn More
+public/figma/              # ۹۷ تصویر export شده از فیگما
+```
 
-To learn more about Next.js, take a look at the following resources:
+## مراحل توسعه
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [x] **مرحله ۱** — UI پیکسل-پرفکت لندینگ از فیگما
+- [x] **مرحله ۲** — صفحات داخلی + احراز هویت OTP + سبد خرید + پنل کاربر
+- [ ] **مرحله ۳** — اتصال به دیتابیس واقعی (Supabase / Postgres)
+- [ ] **مرحله ۴** — SMS واقعی (کاوه‌نگار / SMS.ir)
+- [ ] **مرحله ۵** — درگاه پرداخت زرین‌پال
+- [ ] **مرحله ۶** — پنل ادمین
+- [ ] **مرحله ۷** — پخش ویدیو + سیستم پیشرفت دوره
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## نکات مهم
 
-## Deploy on Vercel
+**فونت:** از `Vazirmatn` برای متن فارسی استفاده شده (نام‌های `Yekan_Bakh:*` در فیگما از طریق `@font-face` به Vazirmatn alias می‌شوند).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**مقیاس‌گذاری:** لندینگ در یک container ثابت `1920×10518` با `transform: scale()` رندر می‌شود تا در viewport‌های کوچک‌تر بدون بازسازی layout، تناسب پیکسلی حفظ شود.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**حافظه:** داده‌های کاربر/سفارش/OTP فعلاً در حافظه‌ی process هستند (`src/lib/otp-store.ts`). قبل از deploy باید با دیتابیس واقعی جایگزین شوند.
+
+**پرداخت:** در حالت dev (بدون `ZARINPAL_MERCHANT_ID`) جریان پرداخت شبیه‌سازی می‌شود و مستقیم به callback موفق هدایت می‌کند.
