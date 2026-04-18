@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server";
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __namdar_newsletter: Set<string> | undefined;
-}
-
-const subs =
-  globalThis.__namdar_newsletter ?? (globalThis.__namdar_newsletter = new Set());
+import { addNewsletterSub } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "ایمیل معتبر نیست" }, { status: 400 });
     }
 
-    subs.add(email);
+    addNewsletterSub(email);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "درخواست نامعتبر" }, { status: 400 });

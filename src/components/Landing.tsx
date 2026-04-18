@@ -1,3 +1,6 @@
+import MonCoachingSection from "@/components/MonCoachingSection";
+import { getSetting } from "@/lib/db";
+
 const imgUntitledPanorama8Copy1 = "/figma/untitledpanorama8copy1.png";
 const imgRectangle33 = "/figma/rectangle33.png";
 const imgRectangle34 = "/figma/rectangle34.png";
@@ -13,7 +16,6 @@ const imgUntitled1Copy1 = "/figma/untitled1copy1.png";
 const imgLq1BannerCopy1 = "/figma/lq1bannercopy1.jpg";
 const imgRectangle19 = "/figma/rectangle19.png";
 const imgRectangle21 = "/figma/rectangle21.png";
-const imgScreenshot00080208At1732541 = "/figma/screenshot00080208at1732541.png";
 const img1072Copy3 = "/figma/1072copy3.png";
 const imgTt6A9115Copy2 = "/figma/tt6a9115copy2.png";
 const imgPortraitTeacherGivingOnlineClass2 = "/figma/portraitteachergivingonlineclass2.jpg";
@@ -97,6 +99,11 @@ const imgGroup1000001986 = "/figma/group1000001986.svg";
 const imgGroup1000001987 = "/figma/group1000001987.svg";
 
 export default function Landing() {
+  const monVideoUrl = getSetting<string>("landing.monVideoUrl") || "";
+  const monPosterUrl =
+    getSetting<string>("landing.monPosterUrl") ||
+    "/figma/screenshot00080208at1732541.png";
+
   return (
     <div className="bg-white relative size-full" data-node-id="4:18" data-name="Landing">
       <div className="absolute h-[807px] left-[-27px] mix-blend-luminosity opacity-74 top-[1019px] w-[1944px]" data-node-id="4:19" data-name="Untitled_Panorama-8 copy 1">
@@ -285,22 +292,13 @@ export default function Landing() {
             <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgHeaderPic} />
           </div>
         </div>
-        <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] h-[114px] leading-[normal] left-[calc(66.67%+26px)] not-italic text-[#1b3c8a] text-[22px] top-[75px] w-[55px]" dir="auto" data-node-id="4:85">
-          خانه
-        </p>
-        <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] h-[114px] leading-[normal] left-[calc(58.33%+25px)] not-italic text-[#1b3c8a] text-[22px] top-[75px] w-[100px]" dir="auto" data-node-id="4:86">
-          درباره ما
-        </p>
-        <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] h-[114px] leading-[normal] left-[calc(50%+34px)] not-italic text-[#1b3c8a] text-[22px] top-[75px] w-[90px]" dir="auto" data-node-id="4:87">
-          دوره‌ها
-        </p>
-        <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] h-[114px] leading-[normal] left-[calc(41.67%+45px)] not-italic text-[#1b3c8a] text-[22px] top-[75px] w-[87px]" dir="auto" data-node-id="4:88">
-          مقالات
-        </p>
-        <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] h-[114px] leading-[normal] left-[calc(33.33%+22px)] not-italic text-[#1b3c8a] text-[22px] top-[75px] w-[128px]" dir="auto" data-node-id="4:89">
-          تماس با ما
-        </p>
       </div>
+      <div className="absolute h-[59px] right-[116px] top-[38px] w-[82px]" data-node-id="4:143" data-name="Layer 2 1">
+        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgLayer21} />
+      </div>
+      <p className="absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] not-italic right-[calc(8.33%+67px)] text-[#1b3c8a] text-[24px] text-right top-[51px] whitespace-nowrap" dir="auto" data-node-id="4:161">
+        نامدارآکادمی
+      </p>
       <div className="absolute contents right-[-65px] top-[3867px]" data-node-id="4:90" data-name="Explore Course">
         <div className="absolute flex h-[938px] items-center justify-center right-[-65px] top-[3867px] w-[1507px]">
           <div className="-scale-y-100 flex-none rotate-180">
@@ -486,22 +484,20 @@ export default function Landing() {
           </div>
         </div>
       </div>
-      <div className="absolute bg-[#1b3c8a] h-[53px] left-[119px] rounded-[44px] top-[63px] w-[162px]" data-node-id="4:142" />
-      <div className="absolute h-[79px] right-[116px] top-[39px] w-[110px]" data-node-id="4:143" data-name="Layer 2 1">
-        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgLayer21} />
-      </div>
-      <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[200.5px] not-italic text-[22px] text-center text-white top-[72px] w-[189px]" dir="auto" data-node-id="4:144">
-        ورود
-      </p>
-      <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(8.33%+184.5px)] not-italic text-[#1b3c8a] text-[22px] text-center top-[75px] w-[189px]" dir="auto" data-node-id="4:145">
-        ثبت نام
-      </p>
       <div className="absolute contents left-[9px] right-[-9px] top-[-1px]" data-node-id="4:146" data-name="Mask group">
         <div className="absolute aspect-[4096/2731] left-[-146px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[155px_52px] mask-size-[1920px_1118px] right-[-164px] top-[-53px]" data-node-id="4:158" style={{ maskImage: `url('${imgLayer02}')` }} data-name="Layer 0 2">
           <img alt="" className="absolute inset-0 max-w-none object-cover opacity-5 pointer-events-none size-full" src={imgLayer3} />
         </div>
-        <div className="absolute h-[1035px] left-[calc(16.67%+55px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[-366px_-117px] mask-size-[1920px_1118px] top-[116px] w-[1078px]" data-node-id="4:159" style={{ maskImage: `url('${imgLayer02}')` }} data-name="f7eff535-b0ed-407a-a6c3-e4d475e4fc74 1">
-          <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgF7Eff535B0Ed407AA6C3E4D475E4Fc741} />
+        <div className="absolute h-[931px] left-[-66px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[66px_-123px] mask-size-[1920px_1118px] top-[122px] w-[970px]" data-node-id="4:159" style={{ maskImage: `url('${imgLayer02}')` }}>
+          <img
+            alt=""
+            className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
+            src={imgF7Eff535B0Ed407AA6C3E4D475E4Fc741}
+            style={{
+              maskImage: "linear-gradient(to bottom, black 70%, transparent 96%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 96%)",
+            }}
+          />
         </div>
       </div>
       <p className="-translate-x-full absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[0] left-[calc(16.67%+1194px)] not-italic text-[#06142f] text-[48px] text-right top-[1212px] whitespace-nowrap" dir="auto" data-node-id="4:160">
@@ -509,82 +505,118 @@ export default function Landing() {
         <span className="font-['Yekan_Bakh:Heavy',sans-serif] leading-[normal]">یک میلیون</span>
         <span className="leading-[normal]">{` کاربر فعال`}</span>
       </p>
-      <p className="absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] not-italic right-[calc(8.33%+95px)] text-[#1b3c8a] text-[32px] text-right top-[72px] whitespace-nowrap" dir="auto" data-node-id="4:161">
-        نامدارآکادمی
-      </p>
-      <div className="absolute contents left-[216px] top-[212px]" data-node-id="4:162">
-        <div className="absolute bg-gradient-to-b from-[rgba(255,255,255,0)] h-[287px] left-[216px] rounded-[111px] to-[#ffb04b] top-[212px] w-[184px]" data-node-id="4:163" />
-        <div className="absolute left-[calc(8.33%+66px)] size-[165px] top-[343px]" data-node-id="4:164" data-name="image 1">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <img alt="" className="absolute h-[146.59%] left-0 max-w-none top-0 w-[99.87%]" src={imgImage1} />
-          </div>
-        </div>
-      </div>
-      <div className="absolute left-[106px] size-[166px] top-[524px]" data-node-id="4:165">
+      {/* Brand circles — temporarily hidden. Flip SHOW_BRAND_CIRCLES to true to re-enable. */}
+      {(() => {
+        const SHOW_BRAND_CIRCLES = false;
+        if (!SHOW_BRAND_CIRCLES) return null;
+        const ROW_TOP = 560;
+        const HALO_SIZE = 120;
+        const LOGO_SIZE = 96;
+        const LOGO_OFFSET = (HALO_SIZE - LOGO_SIZE) / 2;
+        const GAP = 95;
+        const RIGHT_EDGE = 1490;
+        // RTL order: MON first (rightmost), then NOVA, LQ1, FINVEST
+        // FINVEST source PNG is wider than tall with the circle on the left half,
+        // so it needs special crop styling to match the others visually.
+        const circles = [
+          { img: imgImage1, bg: "radial-gradient(circle, rgba(255,176,75,0.55) 0%, rgba(255,176,75,0) 75%)", mon: true },
+          { img: imgUntitled1Copy1, bg: "radial-gradient(circle, rgba(66,71,186,0.55) 0%, rgba(66,71,186,0) 75%)" },
+          { img: imgLayer11, bg: "radial-gradient(circle, rgba(12,156,75,0.55) 0%, rgba(12,156,75,0) 75%)" },
+          { img: imgFinvestCopy1, bg: "radial-gradient(circle, rgba(18,18,18,0.45) 0%, rgba(18,18,18,0) 75%)", finvest: true },
+        ];
+        return circles.map((c, i) => {
+          const left = RIGHT_EDGE - HALO_SIZE - i * (HALO_SIZE + GAP);
+          return (
+            <div key={i}>
+              <div
+                className="absolute rounded-full"
+                style={{
+                  left,
+                  top: ROW_TOP,
+                  width: HALO_SIZE,
+                  height: HALO_SIZE,
+                  background: c.bg,
+                }}
+              />
+              <div
+                className="absolute rounded-full overflow-hidden pointer-events-none"
+                style={{
+                  left: left + LOGO_OFFSET,
+                  top: ROW_TOP + LOGO_OFFSET,
+                  width: LOGO_SIZE,
+                  height: LOGO_SIZE,
+                }}
+              >
+                {c.finvest ? (
+                  <img
+                    alt=""
+                    className="absolute"
+                    style={{ left: -36, top: -20, width: 252, height: 125, maxWidth: "none" }}
+                    src={c.img}
+                  />
+                ) : c.mon ? (
+                  // MON source PNG has "STUDENT REVIEWS" text under the sphere;
+                  // render taller than the wrapper and clip bottom via overflow-hidden.
+                  <img
+                    alt=""
+                    className="absolute"
+                    style={{ left: 0, top: 0, width: 96, height: 141, maxWidth: "none" }}
+                    src={c.img}
+                  />
+                ) : (
+                  <img
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-contain"
+                    src={c.img}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        });
+      })()}
+      {/* decorative ring kept near photo */}
+      <div className="absolute left-[300px] size-[120px] top-[540px]" data-node-id="4:165">
         <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse2913} />
       </div>
-      <div className="absolute contents left-[calc(66.67%-26px)] top-[324px]" data-node-id="4:166">
-        <div className="absolute bg-gradient-to-b from-[rgba(242,254,254,0)] h-[287px] left-[calc(66.67%-26px)] rounded-[111px] to-[#0c9c4b] top-[324px] w-[184px]" data-node-id="4:167" />
-        <div className="absolute left-[calc(66.67%-26px)] size-[182px] top-[462px]" data-node-id="4:168" data-name="Layer 1 1">
-          <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgLayer11} />
-        </div>
-      </div>
-      <div className="absolute contents left-[calc(75%-2px)] right-[28px] top-[242px]" data-node-id="4:169">
-        <div className="absolute bg-gradient-to-b from-[rgba(18,18,18,0.61)] h-[287px] left-[calc(75%+59px)] rounded-[111px] to-[rgba(242,254,254,0)] top-[303px] w-[184px]" data-node-id="4:170" />
-        <div className="absolute h-[224px] right-[28px] top-[242px] w-[454px]" data-node-id="4:171" data-name="finvest copy 1">
-          <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgFinvestCopy1} />
-        </div>
-      </div>
-      <div className="absolute contents left-[calc(16.67%+175px)] top-[298px]" data-node-id="4:172">
-        <div className="absolute bg-gradient-to-b from-[#4247ba] h-[287px] left-[calc(16.67%+175px)] rounded-[111px] to-[rgba(242,254,254,0)] top-[371px] w-[184px]" data-node-id="4:173" />
-        <div className="absolute contents left-[calc(16.67%+175px)] top-[298px]" data-node-id="4:174">
-          <div className="absolute left-[calc(16.67%+175px)] size-[184px] top-[324px]" data-node-id="4:175">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse2912} />
-          </div>
-          <div className="absolute h-[236px] left-[calc(16.67%+184px)] top-[298px] w-[167px]" data-node-id="4:176" data-name="Untitled-1 copy 1">
-            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgUntitled1Copy1} />
-          </div>
-        </div>
-      </div>
-      <div className="absolute backdrop-blur-[5.15px] bg-[rgba(217,217,217,0.31)] border border-solid border-white h-[92px] left-[calc(16.67%+54px)] rounded-[88px] top-[824px] w-[1116px]" data-node-id="4:177" />
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[71px] left-[calc(58.33%+303px)] not-italic text-[#aeb6b6] text-[24px] text-right top-[834px] whitespace-nowrap" dir="auto" data-node-id="4:179">
-        دوره مورد نظر خود را جستجو کن
-      </p>
-      <div className="absolute bg-[#1b3c8a] border border-solid border-white h-[92px] left-[calc(16.67%+55px)] rounded-bl-[56px] rounded-tl-[56px] top-[824px] w-[200px]" data-node-id="4:180" />
-      <div className="absolute inset-[6.29%_74.11%_93.39%_23.65%]" data-node-id="4:181" data-name="Iconex/Broken/Search">
-        <div className="absolute inset-[12.5%_10.42%_8.51%_12.5%]" data-node-id="I4:181;68:1221" data-name="Search">
-          <div className="absolute inset-[-5.66%_-4.53%]">
-            <img alt="" className="block max-w-none size-full" src={imgSearch} />
-          </div>
-        </div>
-      </div>
-      <div className="absolute bg-[rgba(27,60,138,0.7)] h-[38.451px] left-[calc(66.67%-24.72px)] rounded-[6px] top-[923.06px] w-[125.704px]" data-node-id="4:182" />
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] h-[72.465px] leading-[71px] left-[calc(75%+68.17px)] not-italic text-[13px] text-right text-white top-[892px] w-[113.873px]" dir="auto" data-node-id="4:183">
-        موضوعات مرتبط
-      </p>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(58.33%+225px)] not-italic text-[20px] text-right text-white top-[906px] w-[117px]" dir="auto" data-node-id="4:184">
-        تکنیکال
-      </p>
-      <div className="absolute bg-[rgba(27,60,138,0.7)] h-[38.451px] left-[calc(58.33%+3.66px)] rounded-[6px] top-[923.06px] w-[125.704px]" data-node-id="4:185" />
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(58.33%+102px)] not-italic text-[20px] text-right text-white top-[906px] w-[87px]" dir="auto" data-node-id="4:186">
-        فاندامنتال
-      </p>
-      <div className="absolute bg-[rgba(27,60,138,0.7)] h-[38.451px] left-[calc(25%+95px)] rounded-[6px] top-[923.06px] w-[125.704px]" data-node-id="4:187" />
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(25%+196px)] not-italic text-[20px] text-right text-white top-[907px] w-[93px]" dir="auto" data-node-id="4:188">
-        فاندامنتال
-      </p>
-      <div className="absolute bg-[rgba(27,60,138,0.7)] h-[38.451px] left-[calc(33.33%+66.62px)] rounded-[6px] top-[923.06px] w-[260.282px]" data-node-id="4:189" />
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(33.33%+302px)] not-italic text-[20px] text-right text-white top-[907px] w-[253px]" dir="auto" data-node-id="4:190">
-        موضوعات روانشناسی معاملات
-      </p>
-      <div className="absolute bg-[rgba(27,60,138,0.7)] h-[38.451px] left-[calc(50%+88.24px)] rounded-[6px] top-[923.06px] w-[69.507px]" data-node-id="4:191" />
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(50%+135px)] not-italic text-[20px] text-right text-white top-[906px] w-[45px]" dir="auto" data-node-id="4:192">
-        طلا
-      </p>
-      <div className="absolute bg-[rgba(27,60,138,0.7)] h-[38.451px] left-[calc(50%+12.82px)] rounded-[6px] top-[923.06px] w-[69.507px]" data-node-id="4:193" />
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(50%+57px)] not-italic text-[20px] text-right text-white top-[906px] w-[46px]" dir="auto" data-node-id="4:194">
-        دلار
-      </p>
+      {/* Search bar + category pills — temporarily hidden. Flip SHOW_SEARCH to true to re-enable. */}
+      {(() => {
+        const SHOW_SEARCH = false;
+        if (!SHOW_SEARCH) return null;
+        return (
+          <>
+            <div className="absolute backdrop-blur-[5.15px] bg-[rgba(217,217,217,0.31)] border border-solid border-white h-[64px] left-[calc(16.67%+254px)] rounded-[64px] top-[600px] w-[916px]" data-node-id="4:177" />
+            <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[50px] left-[calc(58.33%+303px)] not-italic text-[#aeb6b6] text-[18px] text-right top-[607px] whitespace-nowrap" dir="auto" data-node-id="4:179">
+              دوره مورد نظر خود را جستجو کن
+            </p>
+            <div className="absolute bg-[#1b3c8a] border border-solid border-white h-[64px] left-[calc(16.67%+255px)] rounded-bl-[40px] rounded-tl-[40px] top-[600px] w-[150px]" data-node-id="4:180" />
+            <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(66.67%+84.28px)] rounded-[6px] top-[672px] w-[125.704px]" data-node-id="4:182" />
+            <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(58.33%+334px)] not-italic text-[17px] text-right text-white top-[653px] w-[117px]" dir="auto" data-node-id="4:184">
+              تکنیکال
+            </p>
+            <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(58.33%+112.66px)] rounded-[6px] top-[672px] w-[125.704px]" data-node-id="4:185" />
+            <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(58.33%+211px)] not-italic text-[17px] text-right text-white top-[653px] w-[87px]" dir="auto" data-node-id="4:186">
+              فاندامنتال
+            </p>
+            <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(25%+204px)] rounded-[6px] top-[672px] w-[125.704px]" data-node-id="4:187" />
+            <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(25%+305px)] not-italic text-[17px] text-right text-white top-[654px] w-[93px]" dir="auto" data-node-id="4:188">
+              فاندامنتال
+            </p>
+            <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(33.33%+175.62px)] rounded-[6px] top-[672px] w-[260.282px]" data-node-id="4:189" />
+            <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(33.33%+411px)] not-italic text-[17px] text-right text-white top-[654px] w-[253px]" dir="auto" data-node-id="4:190">
+              موضوعات روانشناسی معاملات
+            </p>
+            <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(50%+197.24px)] rounded-[6px] top-[672px] w-[69.507px]" data-node-id="4:191" />
+            <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(50%+244px)] not-italic text-[17px] text-right text-white top-[653px] w-[45px]" dir="auto" data-node-id="4:192">
+              طلا
+            </p>
+            <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(50%+121.82px)] rounded-[6px] top-[672px] w-[69.507px]" data-node-id="4:193" />
+            <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(50%+166px)] not-italic text-[17px] text-right text-white top-[653px] w-[46px]" dir="auto" data-node-id="4:194">
+              دلار
+            </p>
+          </>
+        );
+      })()}
       <div className="absolute contents left-[calc(33.33%+61px)] top-[1352px]" data-node-id="4:195">
         <div className="absolute bg-[#1b3c8a] h-[101px] left-[calc(33.33%+61px)] rounded-[82px] top-[1352px] w-[516px]" data-node-id="4:196" />
         <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[normal] left-[calc(41.67%+32px)] not-italic text-[32px] text-white top-[1377px] whitespace-nowrap" dir="auto" data-node-id="4:197">
@@ -814,9 +846,7 @@ export default function Landing() {
           </p>
         </div>
       </div>
-      <div className="absolute aspect-[1198/666] left-[156px] right-[157px] rounded-[46px] top-[2278px]" data-node-id="4:290" data-name="Screenshot 0008-02-08 at 17.32.54 1">
-        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[46px] size-full" src={imgScreenshot00080208At1732541} />
-      </div>
+      <MonCoachingSection videoSrc={monVideoUrl} poster={monPosterUrl} />
       <div className="absolute bg-black h-[329px] left-[-11px] top-[1892px] w-[1929px]" data-node-id="4:291" />
       <div className="absolute contents left-[-11px] top-[1892px]" data-node-id="4:292" data-name="Mask group">
         <div className="absolute contents left-[-68px] top-[1690.67px]" data-node-id="4:294">

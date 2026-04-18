@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateOtp, otpStore } from "@/lib/otp-store";
+import { generateOtp, setOtp } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -13,17 +13,15 @@ export async function POST(req: Request) {
 
     const code = generateOtp();
     const expiresAt = Date.now() + 2 * 60 * 1000;
-    otpStore.set(phone, { code, expiresAt, attempts: 0 });
+    setOtp(phone, { code, expiresAt, attempts: 0 });
 
     // TODO: integrate SMS provider (Kavenegar / SMS.ir)
-    // For dev, log the OTP to the server console.
     if (process.env.NODE_ENV !== "production") {
       console.log(`[DEV-OTP] ${phone} → ${code}`);
     }
 
     return NextResponse.json({
       success: true,
-      // NEVER include `code` in production responses
       devCode: process.env.NODE_ENV !== "production" ? code : undefined,
     });
   } catch {

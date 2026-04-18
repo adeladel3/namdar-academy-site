@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSession, isStaff } from "@/lib/auth";
 import {
-  enrollmentStore,
-  orderStore,
+  getCourse,
+  listEnrollments,
+  listOrdersByUser,
   type OrderRecord,
-} from "@/lib/otp-store";
-import { COURSES, formatToman } from "@/data/courses";
+} from "@/lib/db";
+import {
+  ORDER_STATUS_COLORS,
+  ORDER_STATUS_LABELS,
+  faDigits,
+  formatDateTime,
+  formatToman,
+} from "@/lib/formatting";
 import LogoutButton from "./LogoutButton";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({
   searchParams,
@@ -20,13 +29,14 @@ export default async function DashboardPage({
   const sp = await searchParams;
   const payment = sp.payment;
   const orderId = sp.order;
+  const reason = sp.reason;
 
-  const enrolledSlugs = enrollmentStore.get(session.userId) ?? new Set<string>();
-  const enrolledCourses = COURSES.filter((c) => enrolledSlugs.has(c.slug));
+  const enrolledSlugs = listEnrollments(session.userId);
+  const enrolledCourses = enrolledSlugs
+    .map((slug) => getCourse(slug))
+    .filter((c): c is NonNullable<typeof c> => !!c);
 
-  const myOrders: OrderRecord[] = [...orderStore.values()]
-    .filter((o) => o.userId === session.userId)
-    .sort((a, b) => b.createdAt - a.createdAt);
+  const myOrders: OrderRecord[] = listOrdersByUser(session.userId);
 
   return (
     <div className="bg-[#f7fafd] min-h-screen py-10 md:py-16 px-4 md:px-8">
@@ -40,7 +50,17 @@ export default async function DashboardPage({
               به پنل شخصی نامدار آکادمی خوش آمدید.
             </p>
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-3">
+            {isStaff(session) && (
+              <Link
+                href="/admin"
+                className="px-5 py-2.5 rounded-full bg-[#1b3c8a] text-white font-bold text-sm hover:opacity-90 transition"
+              >
+                پنل مدیریت
+              </Link>
+            )}
+            <LogoutButton />
+          </div>
         </div>
 
         {payment === "success" && orderId && (
@@ -50,8 +70,8 @@ export default async function DashboardPage({
         )}
         {payment === "failed" && (
           <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800">
-            ❌ پرداخت ناموفق بود. اگر مبلغی از حساب شما کسر شده، طی ۷۲ ساعت
-            برگردانده خواهد شد.
+            ❌ پرداخت ناموفق بود{reason ? ` — ${decodeURIComponent(reason)}` : ""}.
+            اگر مبلغی از حساب شما کسر شده، طی ۷۲ ساعت برگردانده خواهد شد.
           </div>
         )}
 
@@ -59,15 +79,13 @@ export default async function DashboardPage({
           <div className="p-6 rounded-3xl bg-white border border-[#e5eaf5]">
             <div className="text-sm text-[#010514]/60 mb-2">دوره‌های من</div>
             <div className="text-3xl font-bold text-[#1b3c8a]">
-              {enrolledCourses.length.toLocaleString("fa-IR")}
+              {faDigits(enrolledCourses.length)}
             </div>
           </div>
           <div className="p-6 rounded-3xl bg-white border border-[#e5eaf5]">
             <div className="text-sm text-[#010514]/60 mb-2">سفارش‌های موفق</div>
             <div className="text-3xl font-bold text-[#1b3c8a]">
-              {myOrders
-                .filter((o) => o.status === "paid")
-                .length.toLocaleString("fa-IR")}
+              {faDigits(myOrders.filter((o) => o.status === "paid").length)}
             </div>
           </div>
           <div className="p-6 rounded-3xl bg-white border border-[#e5eaf5]">
@@ -118,8 +136,9 @@ export default async function DashboardPage({
                   <div className="relative aspect-video bg-gradient-to-br from-[#136cb5] to-[#49bbbd]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={c.image}
-                      alt={c.title}
+                      src={c.previewImage}
+                      alt=""
+                      aria-hidden
                       className="w-full h-full object-cover opacity-90"
                     />
                   </div>
@@ -128,7 +147,7 @@ export default async function DashboardPage({
                       {c.title}
                     </h3>
                     <div className="flex items-center justify-between text-xs text-[#010514]/60">
-                      <span>{c.lessons} درس</span>
+                      <span>{c.instructor}</span>
                       <span className="text-[#1b3c8a] font-bold group-hover:gap-2 inline-flex gap-1 transition-all">
                         ورود به دوره <span>←</span>
                       </span>
@@ -157,34 +176,28 @@ export default async function DashboardPage({
                     <th className="text-right p-4">مبلغ</th>
                     <th className="text-right p-4">وضعیت</th>
                     <th className="text-right p-4">کد پیگیری</th>
+                    <th className="text-right p-4">تاریخ</th>
                   </tr>
                 </thead>
                 <tbody>
                   {myOrders.map((o) => {
-                    const course = COURSES.find((c) => c.slug === o.courseSlug);
+                    const course = getCourse(o.courseSlug);
                     return (
                       <tr key={o.id} className="border-t border-[#eef2f7]">
                         <td className="p-4">{course?.title ?? o.courseSlug}</td>
-                        <td className="p-4">{formatToman(o.amount)}</td>
+                        <td className="p-4">{formatToman(o.finalAmount)}</td>
                         <td className="p-4">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-bold ${
-                              o.status === "paid"
-                                ? "bg-green-100 text-green-800"
-                                : o.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
+                            className={`px-2 py-1 rounded-full text-xs font-bold ${ORDER_STATUS_COLORS[o.status]}`}
                           >
-                            {o.status === "paid"
-                              ? "موفق"
-                              : o.status === "pending"
-                              ? "در انتظار پرداخت"
-                              : "ناموفق"}
+                            {ORDER_STATUS_LABELS[o.status]}
                           </span>
                         </td>
                         <td className="p-4 font-mono text-xs" dir="ltr">
-                          {o.refId ?? "—"}
+                          {o.refNum ?? "—"}
+                        </td>
+                        <td className="p-4 text-[#010514]/55 text-xs">
+                          {formatDateTime(o.createdAt)}
                         </td>
                       </tr>
                     );

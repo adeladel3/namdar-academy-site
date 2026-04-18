@@ -2,14 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Course } from "@/data/courses";
+import { useCart } from "@/lib/cart";
+import type { CourseRecord } from "@/lib/db";
 
-export default function EnrollButton({ course }: { course: Course }) {
+export default function EnrollButton({ course }: { course: CourseRecord }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { add, has } = useCart();
 
-  async function handleEnroll() {
+  const alreadyInCart = has(course.slug);
+
+  async function buyNow() {
     setLoading(true);
     setError(null);
     try {
@@ -39,18 +43,52 @@ export default function EnrollButton({ course }: { course: Course }) {
     }
   }
 
+  function addToCart() {
+    add({
+      slug: course.slug,
+      title: course.title,
+      price: course.discountPrice ?? course.price,
+      originalPrice: course.price,
+      image: course.previewImage,
+    });
+  }
+
   return (
-    <div>
+    <div className="space-y-3">
       <button
         type="button"
-        onClick={handleEnroll}
+        onClick={buyNow}
         disabled={loading}
         className="w-full py-4 rounded-full bg-gradient-to-l from-[#136cb5] to-[#49bbbd] text-white font-bold text-lg shadow-lg shadow-[#136cb5]/25 hover:opacity-90 transition disabled:opacity-60 disabled:cursor-wait"
       >
-        {loading ? "در حال انتقال..." : "ثبت‌نام در این دوره"}
+        {loading ? "در حال انتقال..." : "خرید مستقیم"}
       </button>
+
+      {alreadyInCart ? (
+        <button
+          type="button"
+          onClick={() => router.push("/cart")}
+          className="w-full py-3 rounded-full border-2 border-[#1b3c8a] text-[#1b3c8a] font-bold text-base hover:bg-[#eef4ff] transition inline-flex items-center justify-center gap-2"
+        >
+          <span>✓</span> در سبد خرید — مشاهده سبد
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={addToCart}
+          className="w-full py-3 rounded-full border-2 border-[#1b3c8a] text-[#1b3c8a] font-bold text-base hover:bg-[#eef4ff] transition inline-flex items-center justify-center gap-2"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          </svg>
+          افزودن به سبد خرید
+        </button>
+      )}
+
       {error && (
-        <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">
+        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">
           {error}
         </p>
       )}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateOtp, otpStore } from "@/lib/otp-store";
+import { generateOtp, setOtp } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     const code = generateOtp();
-    otpStore.set(phone, {
+    setOtp(phone, {
       code,
       expiresAt: Date.now() + 2 * 60 * 1000,
       attempts: 0,

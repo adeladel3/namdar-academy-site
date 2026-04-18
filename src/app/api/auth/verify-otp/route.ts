@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { setSession } from "@/lib/auth";
 import {
+  createUser,
+  deleteOtp,
+  findUserByPhone,
   generateId,
-  otpStore,
-  userStore,
-  type UserRecord,
-} from "@/lib/otp-store";
+  getOtp,
+  setOtp,
+  touchUserLogin,
+  updateUser,
+} from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +27,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const record = otpStore.get(phone);
+    const record = getOtp(phone);
     if (!record) {
       return NextResponse.json(
         { error: "کدی برای این شماره ارسال نشده است" },
@@ -31,14 +35,14 @@ export async function POST(req: Request) {
       );
     }
     if (record.expiresAt < Date.now()) {
-      otpStore.delete(phone);
+      deleteOtp(phone);
       return NextResponse.json(
         { error: "کد منقضی شده. لطفاً دوباره درخواست کد بدهید" },
         { status: 400 }
       );
     }
     if (record.attempts >= 5) {
-      otpStore.delete(phone);
+      deleteOtp(phone);
       return NextResponse.json(
         { error: "تعداد تلاش‌ها بیش از حد مجاز است" },
         { status: 429 }
@@ -46,27 +50,35 @@ export async function POST(req: Request) {
     }
 
     if (record.code !== otp) {
-      record.attempts += 1;
+      setOtp(phone, { ...record, attempts: record.attempts + 1 });
       return NextResponse.json({ error: "کد نامعتبر است" }, { status: 400 });
     }
 
-    // OTP is valid — clear it and upsert user
-    otpStore.delete(phone);
+    deleteOtp(phone);
 
-    let user: UserRecord | undefined = [...userStore.values()].find(
-      (u) => u.phone === phone
-    );
+    let user = findUserByPhone(phone);
     if (!user) {
-      user = {
-        id: generateId(),
+      user = createUser({
+        id: generateId("u"),
         phone,
         name: (typeof name === "string" && name.trim()) || "کاربر",
-        role: "user",
-      };
-      userStore.set(user.id, user);
+      });
     } else if (typeof name === "string" && name.trim() && user.name === "کاربر") {
-      user.name = name.trim();
+      user = updateUser(user.id, { name: name.trim() }) ?? user;
     }
+
+    if (user.status === "disabled") {
+      return NextResponse.json(
+        {
+          error:
+            "حساب کاربری شما غیرفعال است" +
+            (user.disabledReason ? ` — ${user.disabledReason}` : ""),
+        },
+        { status: 403 }
+      );
+    }
+
+    touchUserLogin(user.id);
 
     await setSession({
       userId: user.id,

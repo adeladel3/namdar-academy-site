@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
 import crypto from "node:crypto";
+import type { UserRole } from "@/lib/db";
 
 export type Session = {
   userId: string;
   phone: string;
   name: string;
-  role: "user" | "admin";
+  role: UserRole;
 };
 
 const SESSION_COOKIE = "namdar_session";
@@ -57,4 +58,11 @@ export async function setSession(session: Session) {
 export async function clearSession() {
   const store = await cookies();
   store.delete(SESSION_COOKIE);
+}
+
+export function isAdmin(s: Session | null | undefined) {
+  return s?.role === "admin";
+}
+export function isStaff(s: Session | null | undefined) {
+  return s?.role === "admin" || s?.role === "support";
 }
