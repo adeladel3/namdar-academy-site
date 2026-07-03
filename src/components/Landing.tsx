@@ -1,23 +1,27 @@
+import Link from "@/components/SafeLink";
 import MonCoachingSection from "@/components/MonCoachingSection";
-import { getSetting } from "@/lib/db";
+import MonActionBoxes from "@/components/MonActionBoxes";
+import ExploreCoursesSection, {
+  type LandingSlotOverride,
+} from "@/components/ExploreCoursesSection";
+import InvestmentServicesSection from "@/components/InvestmentServicesSection";
+import InvestingHubDetails from "@/components/InvestingHubDetails";
+import InlineVideo from "@/components/InlineVideo";
+import LeadForm from "@/components/LeadForm";
+import ConsultationRequestButton from "@/components/ConsultationRequestButton";
+import { getCourseRating, getSetting, listArticles, listCourses, listWallOfFame } from "@/lib/db";
+import { faDigits, phoneToTelHref } from "@/lib/formatting";
 
 const imgUntitledPanorama8Copy1 = "/figma/untitledpanorama8copy1.png";
 const imgRectangle33 = "/figma/rectangle33.png";
 const imgRectangle34 = "/figma/rectangle34.png";
 const imgRectangle37 = "/figma/rectangle37.png";
-const imgDetail = "/figma/detail.png";
-const imgLayer21 = "/figma/layer21.png";
 const imgLayer3 = "/figma/layer3.png";
 const imgF7Eff535B0Ed407AA6C3E4D475E4Fc741 = "/figma/f7eff535b0ed407aa6c3e4d475e4fc741.png";
 const imgImage1 = "/figma/image1.png";
 const imgLayer11 = "/figma/layer11.png";
 const imgFinvestCopy1 = "/figma/finvestcopy1.png";
 const imgUntitled1Copy1 = "/figma/untitled1copy1.png";
-const imgLq1BannerCopy1 = "/figma/lq1bannercopy1.jpg";
-const imgRectangle19 = "/figma/rectangle19.png";
-const imgRectangle21 = "/figma/rectangle21.png";
-const img1072Copy3 = "/figma/1072copy3.png";
-const imgTt6A9115Copy2 = "/figma/tt6a9115copy2.png";
 const imgPortraitTeacherGivingOnlineClass2 = "/figma/portraitteachergivingonlineclass2.jpg";
 const imgImage9 = "/figma/image9.png";
 const imgImage10 = "/figma/image10.png";
@@ -30,35 +34,12 @@ const imgRectangle4496 = "/figma/rectangle4496.jpg";
 const imgRectangle4498 = "/figma/rectangle4498.jpg";
 const img1 = "/figma/1.jpg";
 const imgRectangle32 = "/figma/rectangle32.png";
-const imgPolygon2 = "/figma/polygon2.svg";
-const imgLine10 = "/figma/line10.svg";
-const imgLine11 = "/figma/line11.svg";
 const imgRectangle39 = "/figma/rectangle39.svg";
 const imgHeaderPic = "/figma/headerpic.svg";
-const imgIcon8 = "/figma/icon8.svg";
 const imgLayer02 = "/figma/layer02.svg";
 const imgEllipse2913 = "/figma/ellipse2913.svg";
 const imgEllipse2912 = "/figma/ellipse2912.svg";
 const imgSearch = "/figma/search.svg";
-const imgEllipse6 = "/figma/ellipse6.svg";
-const imgGroup = "/figma/group.svg";
-const imgGroup1 = "/figma/group1.svg";
-const imgGroup2 = "/figma/group2.svg";
-const imgGroup3 = "/figma/group3.svg";
-const imgGroup4 = "/figma/group4.svg";
-const imgGroup5 = "/figma/group5.svg";
-const imgGroup6 = "/figma/group6.svg";
-const imgGroup7 = "/figma/group7.svg";
-const imgGroup8 = "/figma/group8.svg";
-const imgGroup9 = "/figma/group9.svg";
-const imgGroup10 = "/figma/group10.svg";
-const imgGroup11 = "/figma/group11.svg";
-const imgGroup81 = "/figma/group81.svg";
-const imgGroup79 = "/figma/group79.svg";
-const imgStar8 = "/figma/star8.svg";
-const imgStar12 = "/figma/star12.svg";
-const imgRectangle22 = "/figma/rectangle22.svg";
-const img1072Copy2 = "/figma/1072copy2.svg";
 const imgEllipse19 = "/figma/ellipse19.svg";
 const imgEllipse20 = "/figma/ellipse20.svg";
 const imgEllipse21 = "/figma/ellipse21.svg";
@@ -104,6 +85,141 @@ export default function Landing() {
     getSetting<string>("landing.monPosterUrl") ||
     "/figma/screenshot00080208at1732541.png";
 
+  const rollupVideo1 =
+    getSetting<string>("landing.rollup1VideoUrl") || monVideoUrl;
+  const rollupVideo2 =
+    getSetting<string>("landing.rollup2VideoUrl") || monVideoUrl;
+  const rollupVideo3 =
+    getSetting<string>("landing.rollup3VideoUrl") || monVideoUrl;
+
+  const contactPhone =
+    getSetting<string>("site.contactPhone") || "021-9100-8222";
+  const contactTelHref = phoneToTelHref(contactPhone);
+
+  // «دیوار افتخارات» — تصاویر و ویدئوهای موفقیت دانش‌پذیران، در انتهای صفحه
+  // فرود (زیر بخش بلاگ). از /admin/wall-of-fame اضافه می‌شود.
+  const wallOfFameItems = listWallOfFame({ publishedOnly: true });
+
+  // "Our Success" strip — 5 stat slots, editable from /admin/settings/landing.
+  // Keep defaults inline so a fresh DB (or an admin clearing a field) still
+  // shows the original numbers instead of an empty spot.
+  const STAT_DEFAULTS: { value: string; label: string }[] = [
+    { value: "15K+", label: "دانش پذیر" },
+    { value: "75%", label: "موفقیت در ترید" },
+    { value: "35", label: "دوره آموزشی حضوری و غیر حضوری" },
+    { value: "26", label: "تجربه منتورینگ" },
+    { value: "16", label: "سال تجربه آموزش" },
+  ];
+  const stats = STAT_DEFAULTS.map((d, i) => {
+    const idx = i + 1;
+    return {
+      value:
+        getSetting<string>(`landing.stat${idx}.value`)?.trim() || d.value,
+      label:
+        getSetting<string>(`landing.stat${idx}.label`)?.trim() || d.label,
+    };
+  });
+
+  const blogArticles = listArticles({ publishedOnly: true })
+    .sort((a, b) => (b.publishedAt || b.createdAt) - (a.publishedAt || a.createdAt))
+    .slice(0, 3);
+
+  // Build overrides for all 7 landing pills. Every slot comes from the DB —
+  // nothing on this strip is hardcoded business content. If an admin pinned
+  // a course to a slot via `landingSlot`, it wins; remaining slots are filled
+  // with the most popular unpinned courses so the strip is always complete.
+  const landingSlotOverrides: (LandingSlotOverride | null)[] = [
+    null, null, null, null, null, null, null,
+  ];
+  const publishedCourses = listCourses({ status: "published" });
+
+  function toOverride(c: (typeof publishedCourses)[number]): LandingSlotOverride {
+    const priceText = c.isFree
+      ? "رایگان"
+      : faDigits(c.price.toLocaleString("en-US")) + " تومان";
+    const levelLabel =
+      c.level === "beginner"
+        ? "سطح مقدماتی"
+        : c.level === "intermediate"
+        ? "سطح متوسط"
+        : "سطح پیشرفته";
+    // Prefer the real approved-review average; if nobody has rated yet, fall
+    // back to the legacy-imported `rating` (some old courses carry an
+    // aggregate from the previous CMS). Last-resort default keeps the stars
+    // looking sensible until real reviews land.
+    const liveRating = getCourseRating(c.slug);
+    const legacyRating =
+      typeof (c as unknown as { rating?: number }).rating === "number"
+        ? (c as unknown as { rating: number }).rating
+        : 0;
+    const rating =
+      liveRating.count > 0
+        ? liveRating.avg
+        : legacyRating > 0 && legacyRating <= 5
+        ? legacyRating
+        : 4.8;
+    const o: LandingSlotOverride = {
+      pillLabel: c.title,
+      detailTitle: c.title,
+      detailLevel: levelLabel,
+      description: c.shortDesc,
+      price: priceText,
+      bannerTitle: c.bannerTitle || c.title,
+      slug: c.slug,
+      rating,
+    };
+    if (c.accentColor) o.color = c.accentColor;
+    if (c.externalHref) o.href = c.externalHref;
+
+    // عکس بنر: برای دوره MON از تصویر صفحه /coaching استفاده می‌شود
+    // (همان عکسی که در /admin/settings/coaching تنظیم شده). برای سایر دوره‌ها
+    // از previewImage خود دوره استفاده می‌شود تا هر کارت عکس واقعی خودش را
+    // نشان دهد — نه تصویر مشترک LQ1.
+    if (c.slug === "mon") {
+      const coachingBanner = getSetting<string>("coaching.bannerImageUrl");
+      if (coachingBanner) o.bannerImage = coachingBanner;
+      else if (c.previewImage) o.bannerImage = c.previewImage;
+    } else if (c.previewImage) {
+      o.bannerImage = c.previewImage;
+    }
+    return o;
+  }
+
+  // 1) Pinned: admin-assigned landingSlot
+  const pinnedSlugs = new Set<string>();
+  for (const c of publishedCourses) {
+    const s = c.landingSlot;
+    if (typeof s !== "number" || s < 0 || s > 6) continue;
+    if (landingSlotOverrides[s]) continue;
+    landingSlotOverrides[s] = toOverride(c);
+    pinnedSlugs.add(c.slug);
+  }
+  // 2) Auto-fill any remaining slots with the most popular unpinned courses
+  const pool = publishedCourses
+    .filter((c) => !pinnedSlugs.has(c.slug))
+    .sort(
+      (a, b) =>
+        (b.studentsCount ?? 0) - (a.studentsCount ?? 0) ||
+        (b.publishedAt ?? b.createdAt) - (a.publishedAt ?? a.createdAt)
+    );
+  for (let i = 0; i < 7; i++) {
+    if (landingSlotOverrides[i]) continue;
+    const pick = pool.shift();
+    if (pick) landingSlotOverrides[i] = toOverride(pick);
+  }
+
+  const faDate = (ts: number) => {
+    try {
+      return new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(ts));
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <div className="bg-white relative size-full" data-node-id="4:18" data-name="Landing">
       <div className="absolute h-[807px] left-[-27px] mix-blend-luminosity opacity-74 top-[1019px] w-[1944px]" data-node-id="4:19" data-name="Untitled_Panorama-8 copy 1">
@@ -111,179 +227,185 @@ export default function Landing() {
           <img alt="" className="absolute h-[110.92%] left-0 max-w-none top-[-0.01%] w-full" src={imgUntitledPanorama8Copy1} />
         </div>
       </div>
-      <div className="absolute contents left-[-11px] top-[9925px]" data-node-id="4:20" data-name="Footer">
-        <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(33.33%+309px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10434px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:21">{`© 2021 Class Technologies Inc. `}</p>
-        <p className="-translate-x-1/2 absolute font-['Poppins:Medium',sans-serif] leading-[normal] left-[calc(33.33%+309px)] not-italic text-[26px] text-center text-white top-[10166px] tracking-[1.04px] whitespace-nowrap" data-node-id="4:22">
-          Subscribe to get our Newsletter
-        </p>
-        <div className="absolute contents left-[calc(33.33%+115px)] top-[9988px]" data-node-id="4:23">
-          <div className="absolute contents left-[calc(33.33%+115px)] top-[9988px]" data-node-id="4:24">
-            <div className="absolute left-[calc(33.33%+115px)] size-[83px] top-[9988px]" data-node-id="4:25">
-              <div className="absolute inset-[2.99%]">
-                <img alt="" className="block max-w-none size-full" src={imgPolygon2} />
-              </div>
+      {/* ===== Editorial — Minimal Blog Grid ===== */}
+      <div
+        className="absolute left-[156px] right-[156px] top-[7678px]"
+        data-node-id="4:52"
+        data-name="Blog Editorial"
+        dir="rtl"
+      >
+        {/* Header row */}
+        <div className="flex items-end justify-between pb-7 mb-12 border-b border-[#081738]/[0.08]">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <span
+                aria-hidden
+                className="h-px w-[34px]"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #1b3c8a, transparent)",
+                }}
+              />
+              <span className="text-[10.5px] tracking-[0.42em] font-extrabold text-[#1b3c8a]/70 font-['Poppins:SemiBold',sans-serif]">
+                NAMDAR · EDITORIAL
+              </span>
             </div>
-            <p className="absolute font-['Poppins:Bold',sans-serif] leading-[normal] left-[calc(33.33%+137px)] not-italic text-[32px] text-white top-[10005px] tracking-[1.28px] whitespace-nowrap" data-node-id="4:26">
-              Skilline
-            </p>
+            <h2
+              className="font-['Yekan_Bakh:Bold',sans-serif] text-[#081738] text-[56px] font-extrabold leading-none tracking-tight"
+              dir="auto"
+            >
+              بلاگ
+            </h2>
           </div>
-          <div className="absolute flex h-[83px] items-center justify-center left-[calc(41.67%+146px)] top-[9988px] w-0">
-            <div className="flex-none rotate-90">
-              <div className="h-0 relative w-[83px]" data-node-id="4:27">
-                <div className="absolute inset-[-1px_0_0_0]">
-                  <img alt="" className="block max-w-none size-full" src={imgLine10} />
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="absolute font-['Poppins:SemiBold',sans-serif] leading-[normal] left-[calc(50%+27px)] not-italic text-[22px] text-white top-[9997px] tracking-[0.88px] w-[156px]" data-node-id="4:28">
-            Virtual Class for Zoom
-          </p>
+
+          <Link
+            href="/articles"
+            className="group flex items-center gap-3 text-[14px] font-['Yekan_Bakh:Bold',sans-serif] font-extrabold text-[#081738] hover:text-[#1b3c8a] transition"
+          >
+            <span className="border-b border-dashed border-[#081738]/30 group-hover:border-[#1b3c8a] pb-0.5">
+              مشاهده همهٔ مقالات
+            </span>
+            <span className="flex items-center justify-center w-9 h-9 rounded-full border border-[#081738]/15 group-hover:border-[#1b3c8a]/50 group-hover:bg-[#1b3c8a]/[0.04] transition">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-transform group-hover:-translate-x-0.5"
+              >
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </span>
+          </Link>
         </div>
-        <div className="absolute contents left-[calc(33.33%+27px)] top-[10381px]" data-node-id="4:29">
-          <div className="absolute flex h-[17px] items-center justify-center left-[calc(33.33%+140px)] top-[10389px] w-0">
-            <div className="flex-none rotate-90">
-              <div className="h-0 relative w-[17px]" data-node-id="4:30">
-                <div className="absolute inset-[-1px_0_0_0]">
-                  <img alt="" className="block max-w-none size-full" src={imgLine11} />
-                </div>
+
+        {/* 3-column article grid — typography-first, minimal */}
+        <div className="grid grid-cols-3 gap-10">
+          {blogArticles.map((article, i) => (
+            <Link
+              key={article.slug}
+              href={`/articles/${article.slug}`}
+              className="group relative block"
+            >
+              {/* Numbered meta rail */}
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-[11px] tracking-[0.3em] font-extrabold text-[#1b3c8a]/65 font-['Poppins:SemiBold',sans-serif] tabular-nums">
+                  /{String(i + 1).padStart(2, "0")}
+                </span>
+                <span
+                  aria-hidden
+                  className="h-px flex-1 bg-[#081738]/10"
+                />
+                <span className="text-[10.5px] tracking-[0.22em] font-extrabold text-[#081738]/55 font-['Yekan_Bakh:Medium',sans-serif]">
+                  {article.category}
+                </span>
               </div>
-            </div>
-          </div>
-          <div className="absolute flex h-[17px] items-center justify-center left-[calc(50%+21px)] top-[10389px] w-0">
-            <div className="flex-none rotate-90">
-              <div className="h-0 relative w-[17px]" data-node-id="4:31">
-                <div className="absolute inset-[-1px_0_0_0]">
-                  <img alt="" className="block max-w-none size-full" src={imgLine11} />
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(33.33%+73.5px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10381px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:32">
-            Careers
-          </p>
-          <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(33.33%+240.5px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10381px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:33">
-            Privacy Policy
-          </p>
-          <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(50%+156px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10381px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:34">{`Terms & Conditions`}</p>
-        </div>
-        <div className="absolute contents left-[-11px] top-[9925px]" data-node-id="4:35" data-name="Footer">
-          <div className="absolute bg-[#252641] h-[593px] left-[-11px] top-[9925px] w-[1920px]" data-node-id="4:36" />
-          <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(33.33%+309px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10445px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:37">{`© 2021 Class Technologies Inc. `}</p>
-          <p className="-translate-x-1/2 absolute font-['Poppins:Medium',sans-serif] leading-[normal] left-[calc(33.33%+309px)] not-italic text-[#b2b3cf] text-[26px] text-center top-[10177px] tracking-[1.04px] whitespace-nowrap" data-node-id="4:38">
-            Subscribe to get our Newsletter
-          </p>
-          <div className="absolute contents left-[calc(33.33%+27px)] top-[10392px]" data-node-id="4:39">
-            <div className="absolute flex h-[17px] items-center justify-center left-[calc(33.33%+140px)] top-[10400px] w-0">
-              <div className="flex-none rotate-90">
-                <div className="h-0 relative w-[17px]" data-node-id="4:40">
-                  <div className="absolute inset-[-1px_0_0_0]">
-                    <img alt="" className="block max-w-none size-full" src={imgLine11} />
+
+              {/* Cover — image or gradient fallback */}
+              <div
+                className="relative aspect-[4/3] rounded-[14px] overflow-hidden mb-6 border border-[#081738]/[0.06]"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #eef2f9 0%, #e5eaf5 55%, #dde3ee 100%)",
+                }}
+              >
+                {article.coverImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={article.coverImage}
+                    alt={article.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
+                  />
+                ) : (
+                  // Typography fallback when no cover
+                  <div className="absolute inset-0 flex items-end p-8">
+                    <span
+                      className="font-['Yekan_Bakh:Bold',sans-serif] text-[#1b3c8a]/15 text-[120px] font-extrabold leading-none"
+                      aria-hidden
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                   </div>
+                )}
+                {/* Gradient veil on hover */}
+                <div
+                  aria-hidden
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, transparent 55%, rgba(8,23,56,0.35) 100%)",
+                  }}
+                />
+                {/* Subtle inline accent stripe — bottom */}
+                <div
+                  aria-hidden
+                  className="absolute bottom-0 left-0 h-[2px] w-0 group-hover:w-full transition-[width] duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #f7cf5a, #d4a62a)",
+                  }}
+                />
+              </div>
+
+              {/* Title */}
+              <h3
+                className="font-['Yekan_Bakh:Bold',sans-serif] text-[#081738] text-[22px] font-extrabold leading-[1.5] group-hover:text-[#1b3c8a] transition-colors"
+                dir="auto"
+              >
+                {article.title}
+              </h3>
+
+              {/* Meta footer: date · read minutes · arrow */}
+              <div className="mt-4 flex items-center justify-between text-[12px] text-[#081738]/55 font-['Yekan_Bakh:Medium',sans-serif]">
+                <div className="flex items-center gap-3">
+                  <span>
+                    {faDate(article.publishedAt || article.createdAt)}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="w-1 h-1 rounded-full bg-[#081738]/25"
+                  />
+                  <span className="flex items-center gap-1.5">
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <polyline points="12 7 12 12 15 14" />
+                    </svg>
+                    {faDigits(article.readMinutes)} دقیقه
+                  </span>
                 </div>
+                <span className="flex items-center gap-1.5 text-[#1b3c8a] opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-400 font-extrabold">
+                  ادامه مطلب
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                  </svg>
+                </span>
               </div>
-            </div>
-            <div className="absolute flex h-[17px] items-center justify-center left-[calc(50%+21px)] top-[10400px] w-0">
-              <div className="flex-none rotate-90">
-                <div className="h-0 relative w-[17px]" data-node-id="4:41">
-                  <div className="absolute inset-[-1px_0_0_0]">
-                    <img alt="" className="block max-w-none size-full" src={imgLine11} />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(33.33%+73.5px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10392px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:42">
-              Careers
-            </p>
-            <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(33.33%+240.5px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10392px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:43">
-              Privacy Policy
-            </p>
-            <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(50%+156px)] not-italic text-[#b2b3cf] text-[22px] text-center top-[10392px] tracking-[0.88px] whitespace-nowrap" data-node-id="4:44">{`Terms & Conditions`}</p>
-          </div>
-          <div className="absolute contents left-[calc(25%+170px)] top-[10236px]" data-node-id="4:45">
-            <div className="absolute border border-[#83839a] border-solid h-[60px] left-[calc(25%+170px)] rounded-[80px] top-[10236px] w-[400px]" data-node-id="4:46" />
-            <p className="-translate-x-1/2 absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(33.33%+96px)] not-italic text-[#83839a] text-[20px] text-center top-[10251px] tracking-[0.8px] whitespace-nowrap" data-node-id="4:47">
-              Your Email
-            </p>
-            <div className="absolute contents left-[calc(50%+110px)] top-[10236px]" data-node-id="4:48">
-              <div className="absolute bg-[#545ae8] blur-[27px] h-[29px] left-[calc(50%+122px)] opacity-50 rounded-[60px] top-[10266px] w-[151px]" data-node-id="4:49" />
-              <div className="absolute bg-[#49bbbd] h-[60px] left-[calc(50%+110px)] rounded-[60px] top-[10236px] w-[179px]" data-node-id="4:50" />
-              <p className="absolute font-['Poppins:Medium',sans-serif] leading-[normal] left-[calc(58.33%-16px)] not-italic text-[22px] text-white top-[10250px] whitespace-nowrap" data-node-id="4:51">
-                Subscribe
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="absolute contents left-[174px] top-[8861px]" data-node-id="4:52" data-name="Lastest News and Resources">
-        <p className="absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[1.8] left-[calc(41.67%+66px)] not-italic text-[#2f327d] text-[36px] top-[8861px] whitespace-nowrap" dir="auto" data-node-id="4:53">
-          بلاگ و محتوا
-        </p>
-        <p className="-translate-x-1/2 absolute font-['Nunito_Sans:Regular','Noto_Sans_Arabic:Regular',sans-serif] font-normal leading-[1.8] left-[calc(33.33%+347px)] text-[#696984] text-[24px] text-center top-[8931px] whitespace-nowrap" dir="auto" data-node-id="4:54" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-          لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ
-        </p>
-        <div className="absolute contents left-[174px] top-[9089px]" data-node-id="4:55">
-          <div className="absolute h-[200px] left-[calc(33.33%+67px)] rounded-[20px] top-[9089px] w-[280px]" data-node-id="4:56">
-            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[20px] size-full" src={imgRectangle33} />
-          </div>
-          <div className="absolute h-[200px] left-[calc(33.33%+67px)] top-[9089px] w-[280px]" data-node-id="4:57">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle39} />
-          </div>
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[1.8] left-[651px] not-italic text-[#252641] text-[26px] text-right top-[9089px] w-[477px]" dir="auto" data-node-id="4:58">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Light',sans-serif] leading-[1.52] left-[646px] not-italic text-[#252641] text-[24px] text-right top-[9210px] w-[447px]" dir="auto" data-node-id="4:59">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[1.8] left-[651px] not-italic text-[#252641] text-[26px] text-right top-[9332px] w-[477px]" dir="auto" data-node-id="4:60">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Light',sans-serif] leading-[1.52] left-[646px] not-italic text-[#252641] text-[24px] text-right top-[9453px] w-[447px]" dir="auto" data-node-id="4:61">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[1.8] left-[651px] not-italic text-[#252641] text-[26px] text-right top-[9589px] w-[477px]" dir="auto" data-node-id="4:62">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Light',sans-serif] leading-[1.52] left-[646px] not-italic text-[#252641] text-[24px] text-right top-[9710px] w-[447px]" dir="auto" data-node-id="4:63">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <div className="absolute contents left-[calc(41.67%+13px)] top-[9235px]" data-node-id="4:64">
-            <div className="absolute bg-[#49bbbd] h-[34px] left-[calc(41.67%+13px)] rounded-[80px] top-[9235px] w-[154px]" data-node-id="4:65" />
-            <p className="absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(41.67%+25px)] not-italic text-[18px] text-white top-[9239px] tracking-[0.36px] whitespace-nowrap" data-node-id="4:66">
-              PRESS RELEASE
-            </p>
-          </div>
-        </div>
-        <div className="absolute contents left-[calc(33.33%+67px)] top-[9339px]" data-node-id="4:67">
-          <div className="absolute contents left-[calc(33.33%+67px)] top-[9339px]" data-node-id="4:68">
-            <div className="absolute h-[200px] left-[calc(33.33%+67px)] rounded-[20px] top-[9339px] w-[280px]" data-node-id="4:69">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[20px] size-full" src={imgRectangle34} />
-            </div>
-            <div className="absolute bg-[#171b41] h-[200px] left-[calc(33.33%+67px)] opacity-10 rounded-[20px] top-[9339px] w-[280px]" data-node-id="4:70" />
-          </div>
-          <div className="absolute contents left-[calc(41.67%+67px)] top-[9485px]" data-node-id="4:71">
-            <div className="absolute bg-[#49bbbd] h-[34px] left-[calc(41.67%+67px)] rounded-[80px] top-[9485px] w-[100px]" data-node-id="4:72" />
-            <p className="absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(41.67%+93px)] not-italic text-[18px] text-white top-[9489px] tracking-[0.36px] whitespace-nowrap" data-node-id="4:73">
-              NEWS
-            </p>
-          </div>
-        </div>
-        <div className="absolute contents left-[calc(33.33%+67px)] top-[9589px]" data-node-id="4:74">
-          <div className="absolute contents left-[calc(33.33%+67px)] top-[9589px]" data-node-id="4:75">
-            <div className="absolute h-[200px] left-[calc(33.33%+67px)] rounded-[20px] top-[9589px] w-[280px]" data-node-id="4:76">
-              <div aria-hidden="true" className="absolute inset-0 pointer-events-none rounded-[20px]">
-                <img alt="" className="absolute max-w-none object-cover rounded-[20px] size-full" src={imgRectangle37} />
-                <img alt="" className="absolute max-w-none object-cover rounded-[20px] size-full" src={imgRectangle37} />
-              </div>
-            </div>
-            <div className="absolute bg-[#171b41] h-[200px] left-[calc(33.33%+67px)] opacity-10 rounded-[20px] top-[9589px] w-[280px]" data-node-id="4:77" />
-          </div>
-          <div className="absolute contents left-[calc(41.67%+67px)] top-[9735px]" data-node-id="4:78">
-            <div className="absolute bg-[#49bbbd] h-[34px] left-[calc(41.67%+67px)] rounded-[80px] top-[9735px] w-[100px]" data-node-id="4:79" />
-            <p className="absolute font-['Poppins:Regular',sans-serif] leading-[normal] left-[calc(41.67%+93px)] not-italic text-[18px] text-white top-[9739px] tracking-[0.36px] whitespace-nowrap" data-node-id="4:80">
-              NEWS
-            </p>
-          </div>
+            </Link>
+          ))}
         </div>
       </div>
       <div className="absolute contents left-0 top-[-1px]" data-node-id="4:81" data-name="Header">
@@ -293,195 +415,29 @@ export default function Landing() {
           </div>
         </div>
       </div>
-      <div className="absolute h-[59px] right-[116px] top-[38px] w-[82px]" data-node-id="4:143" data-name="Layer 2 1">
-        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgLayer21} />
-      </div>
-      <p className="absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] not-italic right-[calc(8.33%+67px)] text-[#1b3c8a] text-[24px] text-right top-[51px] whitespace-nowrap" dir="auto" data-node-id="4:161">
-        نامدارآکادمی
-      </p>
-      <div className="absolute contents right-[-65px] top-[3867px]" data-node-id="4:90" data-name="Explore Course">
-        <div className="absolute flex h-[938px] items-center justify-center right-[-65px] top-[3867px] w-[1507px]">
-          <div className="-scale-y-100 flex-none rotate-180">
-            <div className="bg-[#9dccff] h-[938px] opacity-20 rounded-br-[100px] w-[1507px]" data-node-id="4:91" data-name="Rectangle" />
-          </div>
-        </div>
-        <div className="absolute contents left-[115px] top-[4103px]" data-node-id="4:92" data-name="Category">
-          <div className="absolute bg-black h-[82.296px] left-[115px] opacity-5 rounded-[29.5px] top-[4608px] w-[1682.724px]" data-node-id="4:93" data-name="Rectangle" />
-          <div className="absolute flex h-[420.172px] items-center justify-center left-[calc(41.67%+88.06px)] top-[4229.9px] w-[111.297px]">
-            <div className="flex-none rotate-[-0.99deg] skew-x-[-0.04deg]">
-              <div className="h-[418.426px] overflow-clip relative w-[104.394px]" data-node-id="4:94" data-name="Book">
-                <div className="absolute bg-white inset-0 rounded-[24px] shadow-[0px_3px_49px_9px_rgba(0,0,0,0.06)]" data-node-id="I4:95;0:1642" data-name="Rectangle" />
-                <div className="absolute bg-[#ebf5ff] inset-[4.33%_12%_4.33%_10.67%] rounded-[24px]" data-node-id="I4:95;0:1643" data-name="Rectangle" />
-                <div className="absolute bg-[#2196f3] inset-[11.67%_19.88%_12%_20.12%] rounded-[24px]" data-node-id="4:96" data-name="Rectangle" />
-                <div className="-translate-x-1/2 absolute flex h-[259.602px] items-center justify-center left-[calc(50%-0.56px)] top-[calc(50%-129.76px)] w-[38.974px]">
-                  <div className="-rotate-90 flex-none">
-                    <p className="font-['Yekan_Bakh:Medium',sans-serif] h-[38.974px] leading-[normal] not-italic relative text-[24px] text-center text-white w-[259.602px]" dir="auto" data-node-id="4:97">
-                      دوره روانشناسی معاملات
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex h-[420.172px] items-center justify-center left-[calc(50%+62px)] top-[4229.9px] w-[111.297px]">
-            <div className="flex-none rotate-[-0.99deg] skew-x-[-0.04deg]">
-              <div className="h-[418.426px] overflow-clip relative w-[104.394px]" data-node-id="4:98" data-name="Book">
-                <div className="absolute bg-white inset-0 rounded-[24px] shadow-[0px_3px_49px_9px_rgba(0,0,0,0.06)]" data-node-id="I4:99;0:1642" data-name="Rectangle" />
-                <div className="absolute bg-[#ebf5ff] inset-[4.33%_12%_4.33%_10.67%] rounded-[24px]" data-node-id="I4:99;0:1643" data-name="Rectangle" />
-                <div className="absolute bg-[#00cbb8] inset-[12%_20.12%_11.67%_19.88%] rounded-[24px]" data-node-id="4:100" data-name="Rectangle" />
-                <div className="absolute flex h-[191px] items-center justify-center left-[31.33%] right-[31.33%] top-[calc(50%-95.21px)]" style={{ containerType: "size" }}>
-                  <div className="-rotate-90 flex-none h-[92.5176cqw] w-[99.6624cqh]">
-                    <p className="font-['Yekan_Bakh:Medium',sans-serif] leading-[normal] not-italic relative size-full text-[24px] text-center text-white" dir="auto" data-node-id="4:101">
-                      دوره تکنوفاند
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex h-[420.172px] items-center justify-center right-[calc(25%+172.7px)] top-[4229.9px] w-[111.297px]">
-            <div className="flex-none rotate-[-0.99deg] skew-x-[-0.04deg]">
-              <div className="h-[418.426px] overflow-clip relative w-[104.394px]" data-node-id="4:102" data-name="Book">
-                <div className="absolute bg-white inset-0 rounded-[24px] shadow-[0px_3px_49px_9px_rgba(0,0,0,0.06)]" data-node-id="I4:103;0:1642" data-name="Rectangle" />
-                <div className="absolute bg-[#ebf5ff] inset-[4.33%_12%_4.33%_10.67%] rounded-[24px]" data-node-id="I4:103;0:1643" data-name="Rectangle" />
-                <div className="absolute bg-[#545ae8] inset-[13.7%_19.96%_9.97%_20.04%] rounded-[24px]" data-node-id="4:104" data-name="Rectangle" />
-                <div className="absolute flex h-[193px] items-center justify-center left-[31.26%] right-[31.41%] top-[calc(50%-90.63px)]" style={{ containerType: "size" }}>
-                  <div className="-rotate-90 flex-none h-[92.445cqw] w-[99.666cqh]">
-                    <p className="font-['Yekan_Bakh:Medium',sans-serif] leading-[normal] not-italic relative size-full text-[24px] text-center text-white" dir="auto" data-node-id="4:105">
-                      دوره اکوجامع
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex h-[420.172px] items-center justify-center right-[calc(25%+38.7px)] top-[4229.9px] w-[111.297px]">
-            <div className="flex-none rotate-[-0.99deg] skew-x-[-0.04deg]">
-              <div className="h-[418.426px] overflow-clip relative w-[104.394px]" data-node-id="4:106" data-name="Book">
-                <div className="absolute bg-white inset-0 rounded-[24px] shadow-[0px_3px_49px_9px_rgba(0,0,0,0.06)]" data-node-id="I4:107;0:1642" data-name="Rectangle" />
-                <div className="absolute bg-[#ebf5ff] inset-[4.33%_12%_4.33%_10.67%] rounded-[24px]" data-node-id="I4:107;0:1643" data-name="Rectangle" />
-                <div className="absolute bg-[#435fae] inset-[11.67%_19.88%_12%_20.12%] rounded-[24px]" data-node-id="4:108" data-name="Rectangle" />
-                <div className="absolute flex h-[154px] items-center justify-center left-[31.33%] right-[31.33%] top-[calc(50%-77.21px)]" style={{ containerType: "size" }}>
-                  <div className="-rotate-90 flex-none h-[93.8809cqw] w-[99.5783cqh]">
-                    <p className="font-['Yekan_Bakh:Medium',sans-serif] leading-[normal] not-italic relative size-full text-[24px] text-center text-white" dir="auto" data-node-id="4:109">
-                      دوره پیش بینی
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex h-[420.172px] items-center justify-center right-[calc(16.67%+64.7px)] top-[4229.9px] w-[111.297px]">
-            <div className="flex-none rotate-[-0.99deg] skew-x-[-0.04deg]">
-              <div className="h-[418.426px] overflow-clip relative w-[104.394px]" data-node-id="4:110" data-name="Book">
-                <div className="absolute bg-white inset-0 rounded-[24px] shadow-[0px_3px_49px_9px_rgba(0,0,0,0.06)]" data-node-id="I4:111;0:1642" data-name="Rectangle" />
-                <div className="absolute bg-[#ebf5ff] inset-[4.33%_12%_4.33%_10.67%] rounded-[24px]" data-node-id="I4:111;0:1643" data-name="Rectangle" />
-                <div className="absolute bg-[#545ae8] inset-[12.98%_20.81%_10.68%_19.19%] rounded-[24px]" data-node-id="4:112" data-name="Rectangle" />
-                <div className="absolute flex h-[199px] items-center justify-center left-[31.91%] right-[30.75%] top-[calc(50%-93.54px)]" style={{ containerType: "size" }}>
-                  <div className="-rotate-90 flex-none h-[92.228cqw] w-[99.6764cqh]">
-                    <p className="font-['Yekan_Bakh:Medium',sans-serif] leading-[normal] not-italic relative size-full text-[24px] text-center text-white" dir="auto" data-node-id="4:113">
-                      دوره اقتصاد کلان
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex h-[420.172px] items-center justify-center right-[calc(8.33%+90.7px)] top-[4229.9px] w-[111.297px]">
-            <div className="flex-none rotate-[-0.99deg] skew-x-[-0.04deg]">
-              <div className="h-[418.426px] overflow-clip relative w-[104.394px]" data-node-id="4:114" data-name="Book">
-                <div className="absolute bg-white inset-0 rounded-[24px] shadow-[0px_3px_49px_9px_rgba(0,0,0,0.06)]" data-node-id="I4:115;0:1642" data-name="Rectangle" />
-                <div className="absolute bg-[#ebf5ff] inset-[4.33%_12%_4.33%_10.67%] rounded-[24px]" data-node-id="I4:115;0:1643" data-name="Rectangle" />
-                <div className="absolute bg-[#00a8ff] inset-[11.67%_19.88%_12%_20.12%] rounded-[24px]" data-node-id="4:116" data-name="Rectangle" />
-                <div className="absolute flex h-[125px] items-center justify-center left-[31.33%] right-[31.33%] top-[calc(50%-62.71px)]" style={{ containerType: "size" }}>
-                  <div className="-rotate-90 flex-none h-[94.9778cqw] w-[99.4779cqh]">
-                    <p className="font-['Roboto:Medium','Noto_Sans_Arabic:Regular',sans-serif] font-medium leading-[normal] relative size-full text-[24px] text-center text-white" dir="auto" data-node-id="4:117" style={{ fontVariationSettings: "'wdth' 100" }}>
-                      دوره تکنیکال
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex h-[420.172px] items-center justify-center right-[116.7px] top-[4229.9px] w-[111.297px]">
-            <div className="flex-none rotate-[-0.99deg] skew-x-[-0.04deg]">
-              <div className="h-[418.426px] overflow-clip relative w-[104.394px]" data-node-id="4:118" data-name="Book">
-                <div className="absolute bg-white inset-0 rounded-[24px] shadow-[0px_3px_49px_9px_rgba(0,0,0,0.06)]" data-node-id="I4:119;0:1642" data-name="Rectangle" />
-                <div className="absolute bg-[#ebf5ff] inset-[4.33%_12%_4.33%_10.67%] rounded-[24px]" data-node-id="I4:119;0:1643" data-name="Rectangle" />
-                <div className="absolute bg-[#0eaf77] inset-[14.35%_20.42%_9.31%_19.58%] rounded-[24px]" data-node-id="4:120" data-name="Rectangle" />
-                <div className="absolute flex h-[208px] items-center justify-center left-[31.68%] right-[30.98%] top-[calc(50%-97.06px)]" style={{ containerType: "size" }}>
-                  <div className="-rotate-90 flex-none h-[91.9044cqw] w-[99.691cqh]">
-                    <p className="font-['Roboto:Medium','Noto_Sans_Arabic:Regular',sans-serif] font-medium leading-[normal] relative size-full text-[24px] text-center text-white" dir="auto" data-node-id="4:121" style={{ fontVariationSettings: "'wdth' 100" }}>
-                      دوره lq1
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute h-[429.612px] left-[181px] top-[4225px] w-[684.781px]" data-node-id="4:122" data-name="Detail">
-            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgDetail} />
-          </div>
-          <div className="absolute flex h-[39.056px] items-center justify-center left-[128px] top-[4103px] w-[171.195px]">
-            <div className="-scale-y-100 flex-none rotate-180">
-              <div className="h-[39.056px] relative w-[171.195px]" data-node-id="4:123" data-name="Button/SeeAll">
-                <div className="absolute contents inset-[7.14%_0_10.71%_81.3%]" data-node-id="I4:123;0:1638" data-name="android-arrow-forward">
-                  <div className="absolute inset-[7.14%_0_10.71%_81.3%]" data-node-id="I4:123;0:1639" data-name="Icon_8_">
-                    <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgIcon8} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[normal] left-[237.5px] not-italic text-[#1b3c8a] text-[24px] text-center top-[4105px] whitespace-nowrap" dir="auto" data-node-id="4:124">
-            نمایش بیشتر
-          </p>
-        </div>
-      </div>
+      {/* Landing header brand lockup removed — SiteHeader (in (site) layout) provides global brand+nav for all routes. */}
+      <ExploreCoursesSection slotOverrides={landingSlotOverrides} />
       <div className="absolute contents left-[174px] top-[1533px]" data-node-id="4:125" data-name="Our Success">
         <div className="absolute content-stretch flex gap-[95px] items-start left-[174px] not-italic top-[1533px] whitespace-nowrap" data-node-id="4:126">
-          <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="4:127">
-            <p className="bg-clip-text bg-gradient-to-r font-['Buenos_Aires_Trial:Light',sans-serif] from-[#136cb5] leading-none relative shrink-0 text-[96px] text-[transparent] to-[#49bbbd]" data-node-id="4:128">
-              15K+
-            </p>
-            <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.3] relative shrink-0 text-[32px] text-[rgba(1,5,20,0.8)]" dir="auto" data-node-id="4:129">
-              دانش پذیر
-            </p>
-          </div>
-          <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="4:130">
-            <p className="bg-clip-text bg-gradient-to-r font-['Poppins:Light',sans-serif] from-[#136cb5] leading-[0] relative shrink-0 text-[96px] text-[transparent] to-[#49bbbd]" data-node-id="4:131">
-              <span className="font-['Buenos_Aires_Trial:Light',sans-serif] leading-none">75</span>
-              <span className="font-['Buenos_Aires_Trial:Light',sans-serif] leading-none tracking-[-20px]">{` `}</span>
-              <span className="font-['Buenos_Aires_Trial:Light',sans-serif] leading-none">%</span>
-            </p>
-            <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.3] relative shrink-0 text-[32px] text-[rgba(1,5,20,0.8)]" dir="auto" data-node-id="4:132">
-              موفقیت در ترید
-            </p>
-          </div>
-          <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="4:133">
-            <p className="bg-clip-text bg-gradient-to-r font-['Buenos_Aires_Trial:Light',sans-serif] from-[#136cb5] leading-none relative shrink-0 text-[96px] text-[transparent] to-[#49bbbd]" data-node-id="4:134">
-              35
-            </p>
-            <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.3] relative shrink-0 text-[32px] text-[rgba(1,5,20,0.8)]" dir="auto" data-node-id="4:135">
-              دوره آموزشی حضوری و غیر حضوری
-            </p>
-          </div>
-          <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="4:136">
-            <p className="bg-clip-text bg-gradient-to-r font-['Buenos_Aires_Trial:Light',sans-serif] from-[#136cb5] leading-none relative shrink-0 text-[96px] text-[transparent] to-[#49bbbd]" data-node-id="4:137">
-              26
-            </p>
-            <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.3] relative shrink-0 text-[32px] text-[rgba(1,5,20,0.8)]" dir="auto" data-node-id="4:138">
-              تجربه منتورینگ
-            </p>
-          </div>
-          <div className="content-stretch flex flex-col items-center relative shrink-0" data-node-id="4:139">
-            <p className="bg-clip-text bg-gradient-to-r font-['Buenos_Aires_Trial:Light',sans-serif] from-[#136cb5] leading-none relative shrink-0 text-[96px] text-[transparent] to-[#49bbbd]" data-node-id="4:140">
-              16
-            </p>
-            <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.3] relative shrink-0 text-[32px] text-[rgba(1,5,20,0.8)]" dir="auto" data-node-id="4:141">
-              سال تجربه آموزش
-            </p>
-          </div>
+          {stats.map((s, i) => (
+            <div
+              key={i}
+              className="content-stretch flex flex-col items-center relative shrink-0"
+            >
+              <p
+                className="bg-clip-text bg-gradient-to-r font-['Buenos_Aires_Trial:Light',sans-serif] from-[#136cb5] leading-none relative shrink-0 text-[96px] text-[transparent] to-[#49bbbd]"
+                dir="ltr"
+              >
+                {s.value}
+              </p>
+              <p
+                className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.3] relative shrink-0 text-[32px] text-[rgba(1,5,20,0.8)]"
+                dir="auto"
+              >
+                {s.label}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
       <div className="absolute contents left-[9px] right-[-9px] top-[-1px]" data-node-id="4:146" data-name="Mask group">
@@ -604,7 +560,7 @@ export default function Landing() {
             </p>
             <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(33.33%+175.62px)] rounded-[6px] top-[672px] w-[260.282px]" data-node-id="4:189" />
             <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(33.33%+411px)] not-italic text-[17px] text-right text-white top-[654px] w-[253px]" dir="auto" data-node-id="4:190">
-              موضوعات روانشناسی معاملات
+              موضوعات روان‌شناسی معاملات
             </p>
             <div className="absolute bg-[rgba(27,60,138,0.7)] h-[32px] left-[calc(50%+197.24px)] rounded-[6px] top-[672px] w-[69.507px]" data-node-id="4:191" />
             <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[105px] leading-[71px] left-[calc(50%+244px)] not-italic text-[17px] text-right text-white top-[653px] w-[45px]" dir="auto" data-node-id="4:192">
@@ -617,740 +573,848 @@ export default function Landing() {
           </>
         );
       })()}
-      <div className="absolute contents left-[calc(33.33%+61px)] top-[1352px]" data-node-id="4:195">
-        <div className="absolute bg-[#1b3c8a] h-[101px] left-[calc(33.33%+61px)] rounded-[82px] top-[1352px] w-[516px]" data-node-id="4:196" />
-        <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[normal] left-[calc(41.67%+32px)] not-italic text-[32px] text-white top-[1377px] whitespace-nowrap" dir="auto" data-node-id="4:197">
-          درخواست ثبت مشاوره
-        </p>
+      <div className="absolute h-[101px] left-[calc(33.33%+61px)] top-[1352px] w-[516px]" data-node-id="4:195">
+        <ConsultationRequestButton
+          source="landing-hero-desktop"
+          triggerClassName="block w-full h-full rounded-xl bg-[#1b3c8a] hover:bg-[#254aa0] active:scale-[0.99] transition-colors text-white font-['Yekan_Bakh:Medium',sans-serif] text-[32px] whitespace-nowrap cursor-pointer"
+          triggerStyle={{}}
+          triggerLabel="درخواست ثبت مشاوره"
+        />
       </div>
-      <div className="absolute contents left-[calc(8.33%+73px)] top-[3251px]" data-node-id="4:198" data-name="All-in-one">
-        <div className="absolute bg-white h-[430px] left-[calc(8.33%+73px)] rounded-[20px] shadow-[0px_10px_60px_0px_rgba(38,45,118,0.08)] top-[3315px] w-[450px]" data-node-id="4:199" />
-        <div className="absolute bg-white h-[430px] left-[calc(33.33%+103px)] rounded-[20px] shadow-[0px_10px_60px_0px_rgba(38,45,118,0.08)] top-[3315px] w-[450px]" data-node-id="4:200" />
-        <div className="absolute bg-white h-[430px] left-[calc(66.67%-27px)] rounded-[20px] shadow-[0px_10px_60px_0px_rgba(38,45,118,0.08)] top-[3315px] w-[450px]" data-node-id="4:201" />
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(8.33%+298.5px)] not-italic text-[#444] text-[30px] text-center top-[3420px] w-[343px]" dir="auto" data-node-id="4:202">
-          اطلاعات موفقیت ها
-        </p>
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(33.33%+327.5px)] not-italic text-[#444] text-[30px] text-center top-[3420px] w-[345px]" dir="auto" data-node-id="4:203">
-          اطلاعات هفته های آموزشی
-        </p>
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(66.67%+198.5px)] not-italic text-[#444] text-[30px] text-center top-[3420px] whitespace-nowrap" dir="auto" data-node-id="4:204">
-          اطلاعات سرفصل ها
-        </p>
-        <div className="-translate-x-1/2 absolute font-['Yekan_Bakh:Regular',sans-serif] leading-[0] left-[calc(66.67%+198.5px)] not-italic text-[#696984] text-[20px] text-center top-[3515px] w-[319px] whitespace-pre-wrap" data-node-id="4:205">
-          <p className="leading-[1.8] mb-0" dir="auto">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="leading-[1.8] mb-0" dir="auto">
-            ​
-          </p>
-          <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.8]" dir="auto">{`بیشتر بدانیم   >`}</p>
-        </div>
-        <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] leading-[1.8] left-[calc(41.67%+998px)] not-italic text-[#696984] text-[30px] text-right top-[4096px] w-[971px]" dir="auto" data-node-id="4:206">
-          لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-        </p>
-        <div className="-translate-x-1/2 absolute font-['Yekan_Bakh:Regular',sans-serif] leading-[0] left-[calc(41.67%+171.5px)] not-italic text-[#696984] text-[20px] text-center top-[3515px] w-[319px] whitespace-pre-wrap" data-node-id="4:207">
-          <p className="leading-[1.8] mb-0" dir="auto">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="leading-[1.8] mb-0" dir="auto">
-            ​
-          </p>
-          <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.8]" dir="auto">{`بیشتر بدانیم   >`}</p>
-        </div>
-        <div className="-translate-x-1/2 absolute font-['Yekan_Bakh:Regular',sans-serif] leading-[0] left-[calc(8.33%+298.5px)] not-italic text-[#696984] text-[20px] text-center top-[3515px] w-[319px] whitespace-pre-wrap" data-node-id="4:208">
-          <p className="leading-[1.8] mb-0" dir="auto">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-          </p>
-          <p className="leading-[1.8] mb-0" dir="auto">
-            ​
-          </p>
-          <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.8]" dir="auto">{`بیشتر بدانیم   >`}</p>
-        </div>
-        <div className="absolute contents left-[calc(41.67%+118px)] top-[3258px]" data-node-id="4:209">
-          <div className="absolute left-[calc(41.67%+118px)] size-[100px] top-[3258px]" data-node-id="4:210">
-            <div className="absolute inset-[-24%_-40%_-56%_-40%]">
-              <img alt="" className="block max-w-none size-full" src={imgEllipse6} />
-            </div>
-          </div>
-          <div className="absolute left-[calc(41.67%+144px)] overflow-clip size-[48px] top-[3284px]" data-node-id="4:211" data-name="calendar 2">
-            <div className="absolute contents inset-[0_71.43%_89.29%_21.43%]" data-node-id="4:212" data-name="Group">
-              <div className="absolute inset-[0_71.43%_89.29%_21.43%]" data-node-id="4:213" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[0_21.43%_89.29%_71.43%]" data-node-id="4:215" data-name="Group">
-              <div className="absolute inset-[0_21.43%_89.29%_71.43%]" data-node-id="4:216" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup1} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[10.71%_0_0_0]" data-node-id="4:218" data-name="Group">
-              <div className="absolute inset-[10.71%_0_0_0]" data-node-id="4:219" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup2} />
-              </div>
-            </div>
-            <div className="absolute bottom-[42.86%] contents left-[17.86%] right-[67.86%] top-1/2" data-node-id="4:221" data-name="Group">
-              <div className="absolute bottom-[42.86%] left-[17.86%] right-[67.86%] top-1/2" data-node-id="4:222" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup3} />
-              </div>
-            </div>
-            <div className="absolute bottom-[42.86%] contents left-[42.86%] right-[42.86%] top-1/2" data-node-id="4:224" data-name="Group">
-              <div className="absolute bottom-[42.86%] left-[42.86%] right-[42.86%] top-1/2" data-node-id="4:225" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup4} />
-              </div>
-            </div>
-            <div className="absolute bottom-[42.86%] contents left-[67.86%] right-[17.86%] top-1/2" data-node-id="4:227" data-name="Group">
-              <div className="absolute bottom-[42.86%] left-[67.86%] right-[17.86%] top-1/2" data-node-id="4:228" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup5} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[64.29%_67.86%_28.57%_17.86%]" data-node-id="4:230" data-name="Group">
-              <div className="absolute inset-[64.29%_67.86%_28.57%_17.86%]" data-node-id="4:231" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup6} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[64.29%_42.86%_28.57%_42.86%]" data-node-id="4:233" data-name="Group">
-              <div className="absolute inset-[64.29%_42.86%_28.57%_42.86%]" data-node-id="4:234" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup7} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[64.29%_17.86%_28.57%_67.86%]" data-node-id="4:236" data-name="Group">
-              <div className="absolute inset-[64.29%_17.86%_28.57%_67.86%]" data-node-id="4:237" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup8} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[78.57%_67.86%_14.29%_17.86%]" data-node-id="4:239" data-name="Group">
-              <div className="absolute inset-[78.57%_67.86%_14.29%_17.86%]" data-node-id="4:240" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup9} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[78.57%_42.86%_14.29%_42.86%]" data-node-id="4:242" data-name="Group">
-              <div className="absolute inset-[78.57%_42.86%_14.29%_42.86%]" data-node-id="4:243" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup10} />
-              </div>
-            </div>
-            <div className="absolute contents inset-[78.57%_17.86%_14.29%_67.86%]" data-node-id="4:245" data-name="Group">
-              <div className="absolute inset-[78.57%_17.86%_14.29%_67.86%]" data-node-id="4:246" data-name="Group">
-                <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup11} />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="absolute left-[calc(75%-12px)] size-[100px] top-[3258px]" data-node-id="4:248">
-          <div className="absolute inset-[-30%_-40%_-50%_-40%]">
-            <img alt="" className="block max-w-none size-full" src={imgGroup81} />
-          </div>
-        </div>
-        <div className="absolute left-[calc(16.67%+88px)] size-[100px] top-[3258px]" data-node-id="4:252">
-          <div className="absolute inset-[-30%_-40%_-50%_-40%]">
-            <img alt="" className="block max-w-none size-full" src={imgGroup79} />
-          </div>
-        </div>
-        <div className="absolute right-[calc(41.67%+98px)] size-[114px] top-[3251px]" data-node-id="4:256" data-name="image 2">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <img alt="" className="absolute h-[146.59%] left-0 max-w-none top-0 w-[99.87%]" src={imgImage1} />
-          </div>
-        </div>
-        <div className="absolute left-[calc(16.67%+81px)] size-[114px] top-[3251px]" data-node-id="4:257" data-name="image 3">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <img alt="" className="absolute h-[146.59%] left-0 max-w-none top-0 w-[99.87%]" src={imgImage1} />
-          </div>
-        </div>
-      </div>
-      <div className="absolute right-[calc(16.67%+58px)] size-[114px] top-[3251px]" data-node-id="4:258" data-name="image 1">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <img alt="" className="absolute h-[146.59%] left-0 max-w-none top-0 w-[99.87%]" src={imgImage1} />
-        </div>
-      </div>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(41.67%+998px)] not-italic text-[#081738] text-[45px] text-right top-[4004px] w-[893px]" dir="auto" data-node-id="4:259">
+      <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(41.67%+998px)] not-italic text-[#081738] text-[45px] text-right top-[4204px] w-[893px]" dir="auto" data-node-id="4:259">
         دوره های غیر حضوری
       </p>
-      <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(50%-2.5px)] not-italic text-[#081738] text-[45px] text-center top-[4916px] w-[893px]" dir="auto" data-node-id="4:260">
-        خدمات سرمایه گذاری مطمین
-      </p>
-      <div className="absolute contents left-[175px] top-[4225px]" data-node-id="4:261">
-        <div className="absolute bg-white border border-[rgba(0,0,0,0.3)] border-solid h-[432px] left-[175px] rounded-[25px] top-[4225px] w-[691px]" data-node-id="4:262" />
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] h-[37.206px] leading-[1.8] left-[calc(8.33%+217px)] not-italic text-[#00cbb8] text-[20px] text-center top-[4565.02px] w-[208px] whitespace-pre-wrap" dir="auto" data-node-id="4:263">{`خرید دوره   ۲۴،۰۰۰،۰۰۰ تومان`}</p>
-        <div className="absolute h-[352.699px] left-[calc(25%+87.81px)] rounded-[34px] top-[4265.13px] w-[268.433px]" data-node-id="4:264" data-name="lq1 banner copy 1">
-          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[34px]">
-            <img alt="" className="absolute h-[100.03%] left-[-38.58%] max-w-none top-[-0.02%] w-[323.3%]" src={imgLq1BannerCopy1} />
-          </div>
+      {/* Section heading — clearly marks entry to "Investing Hub" */}
+      <div
+        className="-translate-x-1/2 absolute left-[calc(50%-2.5px)] top-[5040px] w-[893px] flex flex-col items-center"
+        data-node-id="4:260"
+        dir="rtl"
+      >
+        {/* Eyebrow row — English label between hairlines */}
+        <div className="flex items-center gap-4 mb-5">
+          <span
+            aria-hidden
+            className="block h-px w-[80px]"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, rgba(27,60,138,0.55))",
+            }}
+          />
+          <span
+            className="text-[14px] tracking-[0.42em] font-extrabold uppercase"
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              color: "#1b3c8a",
+            }}
+          >
+            Investing Hub
+          </span>
+          <span
+            aria-hidden
+            className="block h-px w-[80px]"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(27,60,138,0.55), transparent)",
+            }}
+          />
         </div>
-        <div className="absolute border-2 border-[#00cbb8] border-solid h-[73.378px] left-[220px] rounded-[63px] top-[4547.45px] w-[315px]" data-node-id="4:265" />
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] h-[48.574px] leading-[normal] left-[calc(8.33%+256.5px)] not-italic text-[#1b3c8a] text-[30px] text-center top-[4280.81px] w-[343px]" dir="auto" data-node-id="4:266">
-          دوره آموزشی LQ1
+        {/* Persian title — IRANSans */}
+        <p
+          className="not-italic leading-none text-[#081738] text-[56px] text-center"
+          style={{
+            fontFamily: "var(--font-iransans), 'Yekan Bakh', sans-serif",
+            fontWeight: 800,
+          }}
+          dir="auto"
+        >
+          اینوستینگ هاب
         </p>
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] h-[23.77px] leading-[normal] left-[calc(8.33%+300.5px)] not-italic text-[#444] text-[15px] text-center top-[4335.58px] w-[343px]" dir="auto" data-node-id="4:267">
-          سطح دوره پیشرفته
+        {/* One-line product description */}
+        <p
+          className="not-italic text-center text-[#3a4a6e] text-[18px] mt-5 leading-[1.7]"
+          style={{
+            fontFamily: "var(--font-iransans), 'Yekan Bakh', sans-serif",
+            fontWeight: 500,
+          }}
+          dir="rtl"
+        >
+          هیچ‌وقت همهٔ تخم‌مرغ‌هایت را در یک سبد نگذار — با فینوست، حرفه‌ای معامله کن؛ با نوا، سبد اختصاصی بچین. دو بالِ مکملِ مدیریتِ هوشمندِ سرمایه.
         </p>
-        <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[109.55px] leading-[1.65] left-[510px] not-italic text-[#696984] text-[20px] text-right top-[4382.09px] w-[310px]" dir="auto" data-node-id="4:268">
-          لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-        </p>
-        <div className="absolute h-[24.804px] left-[calc(16.67%+166px)] top-[4501.98px] w-[24px]" data-node-id="4:269">
-          <div className="absolute inset-[0_2.45%_9.55%_2.45%]">
-            <img alt="" className="block max-w-none size-full" src={imgStar8} />
-          </div>
-        </div>
-        <div className="absolute h-[24.804px] left-[calc(16.67%+141px)] top-[4501.98px] w-[24px]" data-node-id="4:270">
-          <div className="absolute inset-[0_2.45%_9.55%_2.45%]">
-            <img alt="" className="block max-w-none size-full" src={imgStar8} />
-          </div>
-        </div>
-        <div className="absolute h-[24.804px] left-[calc(16.67%+117px)] top-[4501.98px] w-[24px]" data-node-id="4:271">
-          <div className="absolute inset-[0_2.45%_9.55%_2.45%]">
-            <img alt="" className="block max-w-none size-full" src={imgStar8} />
-          </div>
-        </div>
-        <div className="absolute h-[24.804px] left-[calc(16.67%+92px)] top-[4501.98px] w-[24px]" data-node-id="4:272">
-          <div className="absolute inset-[0_2.45%_9.55%_2.45%]">
-            <img alt="" className="block max-w-none size-full" src={imgStar8} />
-          </div>
-        </div>
-        <div className="absolute h-[24.804px] left-[calc(16.67%+67px)] top-[4501.98px] w-[24px]" data-node-id="4:273">
-          <div className="absolute inset-[0_2.45%_9.55%_2.45%]">
-            <img alt="" className="block max-w-none size-full" src={imgStar12} />
-          </div>
-        </div>
       </div>
-      <div className="absolute contents left-[181px] top-[5229px]" data-node-id="4:274" data-name="What Is TOTC">
-        <div className="absolute contents left-[181px] top-[5229px]" data-node-id="4:275">
-          <div className="absolute h-[477.789px] left-[181px] rounded-[20px] top-[5232.58px] w-[716.683px]" data-node-id="4:276">
-            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[20px] size-full" src={imgRectangle19} />
-          </div>
-          <div className="absolute h-[477.789px] left-[181px] top-[5229px] w-[716.683px]" data-node-id="4:277">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgRectangle22} />
-          </div>
-        </div>
-        <div className="absolute contents left-[calc(50%+57.13px)] top-[5232.58px]" data-node-id="4:278">
-          <div className="absolute bg-[#c4c4c4] h-[477.789px] left-[calc(50%+57.13px)] rounded-[20px] top-[5232.58px] w-[716.683px]" data-node-id="4:279" />
-          <div className="absolute h-[477.789px] left-[calc(50%+57.13px)] rounded-[20px] top-[5232.58px] w-[716.683px]" data-node-id="4:280">
-            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[20px] size-full" src={imgRectangle21} />
-          </div>
-          <div className="absolute bg-[rgba(23,27,65,0.45)] h-[477.789px] left-[calc(50%+57.13px)] opacity-60 rounded-[20px] top-[5232.58px] w-[716.683px]" data-node-id="4:281" />
-        </div>
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] h-[57.335px] leading-[normal] left-[calc(8.33%+379.34px)] not-italic text-[32px] text-center text-white top-[5390.25px] w-[348.786px]" dir="auto" data-node-id="4:282">
-          دستیار معامله گری فینوست
-        </p>
-        <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] h-[57.335px] leading-[normal] left-[calc(58.33%+255.47px)] not-italic text-[32px] text-center text-white top-[5390.25px] w-[277.117px]" dir="auto" data-node-id="4:283">
-          مشاوره سبدچینی نوا
-        </p>
-        <div className="absolute contents left-[calc(16.67%+50.92px)] top-[5467.89px]" data-node-id="4:284">
-          <div className="absolute border border-solid border-white h-[95.558px] left-[calc(16.67%+50.92px)] rounded-[80px] top-[5467.89px] w-[338.035px]" data-node-id="4:285" />
-          <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Medium',sans-serif] h-[39.418px] leading-[normal] left-[calc(16.67%+219.34px)] not-italic text-[22px] text-center text-white top-[5496.56px] w-[248.45px]" dir="auto" data-node-id="4:286">
-            اطلاعات بیشتر
-          </p>
-        </div>
-        <div className="absolute contents left-[calc(58.33%+87.05px)] top-[5467.89px]" data-node-id="4:287">
-          <div className="absolute bg-[rgba(160,35,238,0.9)] h-[95.558px] left-[calc(58.33%+87.05px)] rounded-[80px] top-[5467.89px] w-[338.035px]" data-node-id="4:288" />
-          <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Medium',sans-serif] h-[39.418px] leading-[normal] left-[calc(66.67%+95.47px)] not-italic text-[24px] text-center text-white top-[5496.56px] w-[241.283px]" dir="auto" data-node-id="4:289">
-            درخواست مشاوره
-          </p>
-        </div>
-      </div>
+      <InvestmentServicesSection />
+      <InvestingHubDetails />
+
       <MonCoachingSection videoSrc={monVideoUrl} poster={monPosterUrl} />
-      <div className="absolute bg-black h-[329px] left-[-11px] top-[1892px] w-[1929px]" data-node-id="4:291" />
-      <div className="absolute contents left-[-11px] top-[1892px]" data-node-id="4:292" data-name="Mask group">
-        <div className="absolute contents left-[-68px] top-[1690.67px]" data-node-id="4:294">
-          <div className="absolute h-[817.651px] left-[-68px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[57px_201.326px] mask-size-[1929px_329px] top-[1690.67px] w-[1226px]" data-node-id="4:296" style={{ maskImage: `url('${img1072Copy2}')` }} data-name="1072 copy 2">
-            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={img1072Copy3} />
-          </div>
-        </div>
-      </div>
-      <div className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[0] left-[calc(58.33%+675px)] not-italic text-[#fefeff] text-[0px] text-right top-[2011px] w-[605px] whitespace-pre-wrap" data-node-id="4:297">
-        <p className="leading-[normal] mb-0 text-[64px]" dir="auto">{`دوره پیشرفته MON `}</p>
-        <p className="leading-[normal] text-[40px]" dir="auto">
-          با تدریس استاد امیرحسین نام آور
-        </p>
-      </div>
-      <div className="absolute h-[329px] left-[calc(25%+134px)] mix-blend-luminosity top-[1892px] w-[979px]" data-node-id="4:298" data-name="TT6A9115 copy 2">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <img alt="" className="absolute h-[333.13%] left-[-0.02%] max-w-none top-[-37.08%] w-[100.05%]" src={imgTt6A9115Copy2} />
-        </div>
-      </div>
-      <p className="-translate-x-1/2 absolute font-['Poppins:Regular','Noto_Sans_Arabic:Regular',sans-serif] h-[243px] leading-[1.8] left-[calc(8.33%+797.5px)] text-[24px] text-black text-center top-[5013px] tracking-[0.48px] w-[1443px]" dir="auto" data-node-id="4:299" style={{ fontVariationSettings: "'wdth' 100, 'wght' 400" }}>{`لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و مجله در ستون و سطرآنچنان که لازم است، و برای شرایط فعلی تکنولوژی مورد نیاز، و کاربردهای متنوع با هدف بهبود ابزارهای کاربردی می باشد، کتابهای زیادی در شصت و سه درصد گذشته حال و آینده، شناخت فراوان جامعه و متخصصان را می طلبد، تا با نرم افزارها شناخت بیشتری `}</p>
-      <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[611.5px] not-italic text-[#081738] text-[45px] text-center top-[5937px] w-[893px]" dir="auto" data-node-id="4:300">
-        جلسات مشاوره آنلاین سبدچینی
-      </p>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[341px] leading-[1.8] left-[859px] not-italic text-[24px] text-black text-right top-[6034px] tracking-[0.48px] w-[667px]" dir="auto" data-node-id="4:301">
-        لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و مجله در ستون و سطرآنچنان که لازم است، و برای شرایط فعلی تکنولوژی مورد نیاز، و کاربردهای متنوع با هدف بهبود ابزارهای کاربردی می باشد،
-      </p>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(33.33%+986px)] not-italic text-[#081738] text-[45px] text-right top-[6616px] w-[893px]" dir="auto" data-node-id="4:302">
-        سیگنال معاملاتی در خصوص طلا
-      </p>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[341px] leading-[1.8] left-[calc(50%+666px)] not-italic text-[24px] text-black text-right top-[6712px] tracking-[0.48px] w-[667px]" dir="auto" data-node-id="4:303">
-        لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و مجله در ستون و سطرآنچنان که لازم است، و برای شرایط فعلی تکنولوژی مورد نیاز، و کاربردهای متنوع با هدف بهبود ابزارهای کاربردی می باشد،
-      </p>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[875px] not-italic text-[#081738] text-[45px] text-right top-[7239px] w-[893px]" dir="auto" data-node-id="4:304">
-        مشاوره و پشتیبانی ۲۴ ساعته
-      </p>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[341px] leading-[1.8] left-[875px] not-italic text-[24px] text-black text-right top-[7335px] tracking-[0.48px] w-[667px]" dir="auto" data-node-id="4:305">
-        لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و مجله در ستون و سطرآنچنان که لازم است، و برای شرایط فعلی تکنولوژی مورد نیاز، و کاربردهای متنوع با هدف بهبود ابزارهای کاربردی می باشد،
-      </p>
-      <div className="absolute contents left-[calc(41.67%+116px)] top-[5848px]" data-node-id="4:306">
-        <div className="absolute left-[calc(75%-13.88px)] size-[221.866px] top-[6172.4px]" data-node-id="4:307">
-          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse19} />
-        </div>
-        <div className="absolute left-[calc(75%-38.25px)] size-[25.212px] top-[6350.56px]" data-node-id="4:308">
-          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse20} />
-        </div>
-        <div className="absolute left-[calc(58.33%-16.59px)] size-[25.212px] top-[5854.72px]" data-node-id="4:309">
-          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse21} />
-        </div>
-        <div className="absolute left-[calc(50%+8.95px)] size-[117.656px] top-[5848px]" data-node-id="4:310">
-          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse22} />
-        </div>
-        <div className="absolute contents left-[calc(41.67%+116px)] top-[5911.87px]" data-node-id="4:311">
-          <div className="absolute h-[405.914px] left-[calc(41.67%+116px)] top-[5911.87px] w-[658.035px]" data-node-id="4:312">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup67} />
-          </div>
-          <div className="absolute contents left-[calc(50%+10px)] top-[6226px]" data-node-id="4:318">
-            <div className="absolute bg-[#e4d4ff] h-[55px] left-[calc(50%+10px)] rounded-[51.068px] top-[6226px] w-[242px]" data-node-id="4:319" />
-            <div className="absolute bg-[#a534e1] h-[43px] left-[calc(50%+21px)] rounded-[51.068px] shadow-[0px_8.511px_20.427px_0px_rgba(202,47,93,0.3)] top-[6232px] w-[219px]" data-node-id="4:320" />
-            <div className="absolute left-[calc(58.33%+25.06px)] size-[14.306px] top-[6246.35px]" data-node-id="4:321" data-name="phone 1" />
-          </div>
-          <div className="absolute contents left-[calc(50%+26.47px)] top-[5989.84px]" data-node-id="4:322">
-            <div className="absolute contents left-[calc(50%+35.06px)] top-[6012.01px]" data-node-id="4:323" data-name="Mask Group">
-              <div className="absolute h-[190.839px] left-[calc(50%+2.81px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[32.246px_0px] mask-size-[197.419px_190.839px] rounded-[17.023px] top-[6012.01px] w-[284.942px]" data-node-id="4:325" style={{ maskImage: `url('${imgPortraitTeacherGivingOnlineClass1}')` }} data-name="portrait-teacher-giving-online-class 1">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[17.023px] size-full" src={imgPortraitTeacherGivingOnlineClass2} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(50%+26.47px)] top-[5989.84px]" data-node-id="4:326" data-name="Mask Group">
-              <div className="absolute h-[207.434px] left-[calc(50%-8.58px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[35.049px_0px] mask-size-[214.586px_207.434px] rounded-[17.023px] top-[5989.84px] w-[309.72px]" data-node-id="4:328" style={{ maskImage: `url('${imgPortraitTeacherGivingOnlineClass3}')` }} data-name="portrait-teacher-giving-online-class 1">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[17.023px] size-full" src={imgPortraitTeacherGivingOnlineClass2} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(50%+33.32px)] top-[6171.55px]" data-node-id="4:329">
-              <div className="absolute backdrop-blur-[5.546px] bg-[rgba(201,211,231,0.4)] h-[18.489px] left-[calc(50%+33.32px)] rounded-[5.546px] top-[6171.55px] w-[142.868px]" data-node-id="4:330" />
-              <div className="absolute bg-[#3793ff] h-[13.446px] left-[calc(50%+49.28px)] rounded-[5.546px] top-[6174.08px] w-[48.743px]" data-node-id="4:331" />
-              <div className="absolute contents left-[calc(50%+37.98px)] top-[6177.61px]" data-node-id="4:332">
-                <div className="absolute bg-white h-[3.262px] left-[calc(50%+37.98px)] rounded-[0.555px] top-[6180.88px] w-[1.398px]" data-node-id="4:333" />
-                <div className="absolute bg-white h-[4.894px] left-[calc(50%+40.31px)] rounded-[0.555px] top-[6179.25px] w-[1.398px]" data-node-id="4:334" />
-                <div className="absolute bg-white h-[6.525px] left-[calc(50%+42.64px)] rounded-[0.555px] top-[6177.61px] w-[1.398px]" data-node-id="4:335" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(75%+44.95px)] top-[5956.43px]" data-node-id="4:336">
-            <div className="absolute contents left-[calc(75%+44.95px)] top-[5956.43px]" data-node-id="4:337" data-name="Mask Group">
-              <div className="absolute h-[164.102px] left-[calc(75%+25.15px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[19.805px_0px] mask-size-[169.761px_164.103px] top-[5956.43px] w-[210.504px]" data-node-id="4:339" style={{ maskImage: `url('${imgImage8}')` }} data-name="image 8">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage9} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(75%+54.01px)] top-[6089.41px]" data-node-id="4:340">
-              <div className="absolute backdrop-blur-[6.733px] bg-[rgba(201,211,231,0.4)] h-[22.069px] left-[calc(75%+54.01px)] rounded-[6.733px] top-[6089.41px] w-[86.012px]" data-node-id="4:341" />
-              <div className="absolute contents left-[calc(75%+59.66px)] top-[6096.76px]" data-node-id="4:342">
-                <div className="absolute bg-white h-[3.961px] left-[calc(75%+59.66px)] rounded-[0.673px] top-[6100.72px] w-[1.698px]" data-node-id="4:343" />
-                <div className="absolute bg-white h-[5.942px] left-[calc(75%+62.49px)] rounded-[0.673px] top-[6098.74px] w-[1.698px]" data-node-id="4:344" />
-                <div className="absolute bg-white h-[7.922px] left-[calc(75%+65.32px)] rounded-[0.673px] top-[6096.76px] w-[1.698px]" data-node-id="4:345" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(66.67%+19.02px)] top-[5989.84px]" data-node-id="4:346">
-            <div className="absolute contents left-[calc(66.67%+19.02px)] top-[5989.84px]" data-node-id="4:347" data-name="Mask Group">
-              <div className="absolute h-[132.364px] left-[calc(66.67%+7.83px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[11.186px_-2.796px] mask-size-[139.821px_135.16px] top-[5992.63px] w-[162.192px]" data-node-id="4:349" style={{ maskImage: `url('${imgImage7}')` }} data-name="image 7">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage10} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(66.67%+26.48px)] top-[6099.36px]" data-node-id="4:350">
-              <div className="absolute backdrop-blur-[5.546px] bg-[rgba(201,211,231,0.4)] h-[18.177px] left-[calc(66.67%+26.48px)] rounded-[5.546px] top-[6099.36px] w-[81.562px]" data-node-id="4:351" />
-              <div className="absolute contents left-[calc(66.67%+31.14px)] top-[6105.42px]" data-node-id="4:352">
-                <div className="absolute bg-white h-[3.262px] left-[calc(66.67%+31.14px)] rounded-[0.555px] top-[6108.69px] w-[1.398px]" data-node-id="4:353" />
-                <div className="absolute bg-white h-[4.894px] left-[calc(66.67%+33.47px)] rounded-[0.555px] top-[6107.05px] w-[1.398px]" data-node-id="4:354" />
-                <div className="absolute bg-white h-[6.525px] left-[calc(66.67%+35.8px)] rounded-[0.555px] top-[6105.42px] w-[1.398px]" data-node-id="4:355" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(66.67%+19.02px)] top-[6145.97px]" data-node-id="4:356">
-            <div className="absolute contents left-[calc(66.67%+19.02px)] top-[6145.97px]" data-node-id="4:357" data-name="Mask Group">
-              <div className="absolute h-[210.198px] left-[calc(66.67%+19.02px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[0px_0px] mask-size-[139.821px_135.16px] top-[6145.97px] w-[139.821px]" data-node-id="4:359" style={{ maskImage: `url('${imgImage7}')` }} data-name="image 11">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage11} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(66.67%+26.48px)] top-[6255.5px]" data-node-id="4:360">
-              <div className="absolute backdrop-blur-[5.546px] bg-[rgba(201,211,231,0.4)] h-[18.177px] left-[calc(66.67%+26.48px)] rounded-[5.546px] top-[6255.5px] w-[95.078px]" data-node-id="4:361" />
-              <div className="absolute contents left-[calc(66.67%+31.14px)] top-[6261.56px]" data-node-id="4:362">
-                <div className="absolute bg-white h-[3.262px] left-[calc(66.67%+31.14px)] rounded-[0.555px] top-[6264.82px] w-[1.398px]" data-node-id="4:363" />
-                <div className="absolute bg-white h-[4.894px] left-[calc(66.67%+33.47px)] rounded-[0.555px] top-[6263.19px] w-[1.398px]" data-node-id="4:364" />
-                <div className="absolute bg-white h-[6.525px] left-[calc(66.67%+35.8px)] rounded-[0.555px] top-[6261.56px] w-[1.398px]" data-node-id="4:365" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(75%+27.31px)] top-[6155.59px]" data-node-id="4:366">
-            <div className="absolute contents left-[calc(75%+27.31px)] top-[6155.59px]" data-node-id="4:367" data-name="Mask Group">
-              <div className="absolute left-[calc(75%-15.05px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[42.357px_30.255px] mask-size-[201.696px_194.973px] size-[286.409px] top-[6125.33px]" data-node-id="4:369" style={{ maskImage: `url('${imgImage12}')` }} data-name="image 10">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage13} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(75%+38.06px)] top-[6313.58px]" data-node-id="4:370">
-              <div className="absolute backdrop-blur-[8px] bg-[rgba(201,211,231,0.4)] h-[26.221px] left-[calc(75%+38.06px)] rounded-[8px] top-[6313.58px] w-[133.792px]" data-node-id="4:371" />
-              <div className="absolute contents left-[calc(75%+44.79px)] top-[6322.32px]" data-node-id="4:372">
-                <div className="absolute bg-white h-[4.706px] left-[calc(75%+44.79px)] rounded-[0.8px] top-[6327.03px] w-[2.017px]" data-node-id="4:373" />
-                <div className="absolute bg-white h-[7.059px] left-[calc(75%+48.15px)] rounded-[0.8px] top-[6324.68px] w-[2.017px]" data-node-id="4:374" />
-                <div className="absolute bg-white h-[9.412px] left-[calc(75%+51.51px)] rounded-[0.8px] top-[6322.32px] w-[2.017px]" data-node-id="4:375" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute left-[calc(66.67%-27.84px)] size-[78.157px] top-[6124.49px]" data-node-id="4:376">
-            <div className="absolute inset-[-30.71%_-46.06%_-56.3%_-40.94%]">
-              <img alt="" className="block max-w-none size-full" src={imgGroup70} />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="absolute contents left-[calc(8.33%+139px)] top-[6394px]" data-node-id="4:379">
-        <div className="absolute contents left-[calc(8.33%+139px)] top-[6394px]" data-node-id="4:380">
-          <div className="absolute left-[calc(8.33%+171.57px)] size-[19.161px] top-[7026.33px]" data-node-id="4:381">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse105} />
-          </div>
-          <div className="absolute left-[calc(41.67%+50.85px)] size-[16.287px] top-[6752.32px]" data-node-id="4:382">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse108} />
-          </div>
-          <div className="absolute left-[calc(8.33%+139px)] size-[99.64px] top-[6419.87px]" data-node-id="4:383">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse106} />
-          </div>
-          <div className="absolute left-[calc(16.67%+96.84px)] size-[22.994px] top-[6394px]" data-node-id="4:384">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse107} />
-          </div>
-          <div className="absolute bg-white h-[562.39px] left-[calc(8.33%+184.99px)] rounded-[18.206px] shadow-[0px_9.103px_43.694px_0px_rgba(40,43,111,0.1)] top-[6438.07px] w-[465.624px]" data-node-id="4:385" />
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] h-[103.472px] leading-[1.6] left-[calc(16.67%+450.37px)] not-italic text-[#55578d] text-[29px] text-right top-[6564.54px] w-[387.062px]" dir="auto" data-node-id="4:386">
-            مطالعه سیگنال‌ها و سیستم‌ها به دو موضوع می‌پردازد: اطلاعات و چگونگی
-          </p>
-          <div className="absolute flex items-center justify-center left-[calc(33.33%+65.22px)] size-[89.822px] top-[6416.99px]">
-            <div className="flex-none rotate-[-10.96deg]">
-              <div className="relative size-[76.646px]" data-node-id="4:387">
-                <div className="absolute inset-[-47.51%_-52.26%_-57.01%_-52.26%]">
-                  <img alt="" className="block max-w-none size-full" src={imgGroup90} />
+      <MonActionBoxes contactPhone={contactPhone} />
+      {/* ===== MON · Clean Hero Banner ===== */}
+      <div
+        className="absolute left-[-11px] top-[1892px] w-[1929px] h-[520px] overflow-hidden"
+        data-node-id="4:291"
+        data-name="MON Hero Banner"
+        dir="rtl"
+      >
+        {/* Light premium base — frames the hero */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, #f4f6fa 0%, #ffffff 45%, #eef2f7 100%)",
+          }}
+        />
+        {/* Ambient glows (very soft) */}
+        <div
+          aria-hidden
+          className="absolute top-0 right-[22%] w-[620px] h-[420px] rounded-full blur-[130px] pointer-events-none opacity-[0.32]"
+          style={{
+            background:
+              "radial-gradient(circle, #f7cf5a, transparent 70%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute bottom-0 left-[20%] w-[520px] h-[320px] rounded-full blur-[110px] pointer-events-none opacity-[0.25]"
+          style={{
+            background:
+              "radial-gradient(circle, #1b3c8a, transparent 70%)",
+          }}
+        />
+
+        {/* ===== Centered content frame ===== */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-full h-full max-w-[1640px] px-[40px] py-[30px] flex items-stretch">
+            <div className="w-full h-full grid grid-cols-[1fr_460px] gap-7">
+
+              {/* ========== RIGHT (RTL first) — HERO WITH ANIMATED MON LOGO ========== */}
+              <figure
+                className="relative rounded-[28px] overflow-hidden border border-[#1b3c8a]/20 shadow-[0_28px_70px_-22px_rgba(14,26,61,0.45)]"
+                data-slot="hero-media"
+              >
+                {/* Deep premium background */}
+                <div
+                  aria-hidden
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse 90% 80% at 55% 45%, #1b2d6e 0%, #0e1a3d 45%, #070c24 85%)",
+                  }}
+                />
+
+                {/* Ambient gold glow behind logo */}
+                <div
+                  aria-hidden
+                  className="absolute top-1/2 right-[30%] -translate-y-1/2 w-[560px] h-[560px] rounded-full blur-[120px] pointer-events-none opacity-70"
+                  style={{
+                    background:
+                      "radial-gradient(circle, rgba(247,207,90,0.28), transparent 65%)",
+                    animation:
+                      "coaching-aurora 4.4s ease-in-out infinite",
+                  }}
+                />
+
+                {/* Subtle grid overlay (trading-desk feel) */}
+                <div
+                  aria-hidden
+                  className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(rgba(247,207,90,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(247,207,90,0.4) 1px, transparent 1px)",
+                    backgroundSize: "56px 56px",
+                    WebkitMaskImage:
+                      "radial-gradient(ellipse 80% 70% at 50% 50%, black, transparent 90%)",
+                    maskImage:
+                      "radial-gradient(ellipse 80% 70% at 50% 50%, black, transparent 90%)",
+                  }}
+                />
+
+                {/* Tiny twinkling stars */}
+                {[
+                  ["12%", "22%", "0s"],
+                  ["82%", "18%", "1.2s"],
+                  ["68%", "78%", "0.6s"],
+                  ["22%", "80%", "1.8s"],
+                  ["48%", "14%", "2.4s"],
+                  ["92%", "54%", "0.9s"],
+                  ["8%", "58%", "1.5s"],
+                ].map(([top, left, delay], i) => (
+                  <span
+                    key={i}
+                    aria-hidden
+                    className="absolute w-[3px] h-[3px] rounded-full bg-[#f7cf5a] pointer-events-none"
+                    style={{
+                      top,
+                      left,
+                      boxShadow: "0 0 6px #f7cf5a",
+                      animation: `coaching-star-twinkle 2.6s ease-in-out ${delay} infinite`,
+                    }}
+                  />
+                ))}
+
+                {/* TOP-RIGHT (RTL start): LIVE chip */}
+                <div className="absolute top-6 right-6 inline-flex items-center gap-2 px-3.5 py-[7px] rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-[11px] tracking-[0.3em] font-extrabold text-white font-['Poppins:SemiBold',sans-serif] z-20">
+                  <span className="relative flex w-1.5 h-1.5">
+                    <span className="absolute inset-0 rounded-full bg-[#f7cf5a] animate-ping opacity-70" />
+                    <span className="relative w-1.5 h-1.5 rounded-full bg-[#f7cf5a] shadow-[0_0_8px_#f7cf5a]" />
+                  </span>
+                  در حال اجرا · فصل چهارم
                 </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex items-center justify-center left-[calc(33.33%+120.79px)] size-[92.816px] top-[6464.9px]">
-            <div className="flex-none rotate-[13.9deg]">
-              <div className="relative size-[76.646px]" data-node-id="4:391">
-                <div className="absolute inset-[-47.51%_-52.26%_-57.01%_-52.26%]">
-                  <img alt="" className="block max-w-none size-full" src={imgGroup88} />
+
+                {/* TOP-LEFT (RTL end): Chart deco */}
+                <div
+                  aria-hidden
+                  className="absolute top-6 left-6 opacity-55 pointer-events-none z-20"
+                >
+                  <svg
+                    width="140"
+                    height="44"
+                    viewBox="0 0 140 44"
+                    fill="none"
+                  >
+                    <defs>
+                      <linearGradient
+                        id="monChartGrad"
+                        x1="0"
+                        x2="0"
+                        y1="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#f7cf5a"
+                          stopOpacity="0.45"
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#f7cf5a"
+                          stopOpacity="0"
+                        />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 2 36 L 16 30 L 30 34 L 44 22 L 58 26 L 72 14 L 86 18 L 100 8 L 114 12 L 128 4"
+                      stroke="#f7cf5a"
+                      strokeWidth="1.6"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M 2 36 L 16 30 L 30 34 L 44 22 L 58 26 L 72 14 L 86 18 L 100 8 L 114 12 L 128 4 L 128 44 L 2 44 Z"
+                      fill="url(#monChartGrad)"
+                    />
+                    {[
+                      [16, 30],
+                      [44, 22],
+                      [72, 14],
+                      [100, 8],
+                    ].map(([cx, cy]) => (
+                      <circle
+                        key={`${cx}-${cy}`}
+                        cx={cx}
+                        cy={cy}
+                        r="2"
+                        fill="#f7cf5a"
+                      />
+                    ))}
+                  </svg>
                 </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute bg-[#dce2ee] h-[47.904px] left-[calc(16.67%+63.31px)] rounded-[72.824px] top-[6476.39px] w-[174.37px]" data-node-id="4:396" />
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Medium',sans-serif] h-[34px] leading-[1.6] left-[calc(16.67%+214px)] not-italic text-[#717fb0] text-[20.026px] text-right top-[6486px] w-[138px]" dir="auto" data-node-id="4:397">
-            سیگنال معاملاتی
-          </p>
-          <div className="absolute contents left-[calc(16.67%+96.84px)] top-[6736.99px]" data-node-id="4:398" data-name="Mask Group">
-            <div className="absolute h-[258.672px] left-[calc(16.67%+68.61px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[28.235px_15.484px] mask-size-[406.224px_227.704px] opacity-90 rounded-[18.206px] top-[6721.51px] w-[461.783px]" data-node-id="4:400" style={{ maskImage: `url('${imgImage14}')` }} data-name="image 13">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[18.206px] size-full" src={imgImage15} />
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(16.67%+59.48px)] top-[6706.33px]" data-node-id="4:401" data-name="Mask Group">
-            <div className="absolute h-[290.395px] left-[calc(8.33%+187.78px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[31.698px_17.383px] mask-size-[456.043px_255.63px] rounded-[18.206px] top-[6688.95px] w-[518.417px]" data-node-id="4:403" style={{ maskImage: `url('${imgImage16}')` }} data-name="image 13">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[18.206px] size-full" src={imgImage15} />
-            </div>
-            <div className="absolute h-[683px] left-[96px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[283.479px_213.332px] mask-size-[456.043px_255.63px] top-[6493px] w-[1024px]" data-node-id="4:404" style={{ maskImage: `url('${imgImage16}')` }} data-name="image 17">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage17} />
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(25%+70.97px)] top-[6919.98px]" data-node-id="4:405">
-            <div className="absolute bg-white h-[119.759px] left-[calc(25%+70.97px)] rounded-[18.206px] shadow-[0px_18.206px_52.797px_0px_rgba(40,43,111,0.08)] top-[6919.98px] w-[365.026px]" data-node-id="4:406" />
-            <div className="absolute left-[calc(41.67%+18.5px)] size-[59.401px] top-[6953.5px]" data-node-id="4:407">
-              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse104} />
-            </div>
-            <div className="-translate-x-full absolute font-['Poppins:SemiBold',sans-serif] h-[67.065px] leading-[0] left-[calc(25%+315.66px)] not-italic text-[#0a0b0c] text-[0px] text-right top-[6952px] w-[190.657px]" data-node-id="4:408">
-              <p className="font-['Yekan_Bakh:Bold',sans-serif] leading-[1.6] mb-0 text-[15px]" dir="auto">
-                طلا نقاط وورد و خروج
-              </p>
-              <p className="leading-[1.6] text-[20.026px]" dir="auto">
-                در میان مدت
-              </p>
-            </div>
-            <div className="absolute contents h-[76.444px] left-[calc(41.67%+7px)] top-[6942px] w-[88.3px]" data-node-id="4:409">
-              <div className="absolute flex items-center justify-center left-[calc(41.67%+30.95px)] size-[64.353px] top-[6942px]">
-                <div className="flex-none rotate-[-26.79deg]">
-                  <div className="overflow-clip relative size-[47.904px]" data-node-id="4:410" data-name="send 1">
-                    <div className="absolute contents inset-[6.86%_0]" data-node-id="4:411" data-name="Group">
-                      <div className="absolute inset-[6.86%_0]" data-node-id="4:412" data-name="Group">
-                        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup12} />
+
+                {/* ===== MAIN CONTENT: Logo + slogan, side by side ===== */}
+                <div className="relative h-full flex items-center justify-between px-[64px] gap-10">
+                  {/* --- Right (RTL first): Animated MON logo --- */}
+                  <div
+                    className="relative shrink-0 w-[300px] h-[300px]"
+                    style={{ animation: "mon-drift 5s ease-in-out infinite" }}
+                  >
+                    {/* Pulsing rings — radiate from sphere */}
+                    {[0, 1.4, 2.8].map((d) => (
+                      <span
+                        key={d}
+                        aria-hidden
+                        className="absolute inset-[40px] rounded-full border border-[#f7cf5a]/60 pointer-events-none"
+                        style={{
+                          animation: `mon-pulse-ring 4.2s ease-out ${d}s infinite`,
+                        }}
+                      />
+                    ))}
+
+                    {/* Outer orbital ring (dashed, slow CCW) */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 rounded-full border border-dashed border-[#f7cf5a]/35 pointer-events-none"
+                      style={{
+                        animation:
+                          "mon-ring-spin 38s linear infinite reverse",
+                      }}
+                    >
+                      <span
+                        className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#f7cf5a]"
+                        style={{
+                          boxShadow: "0 0 12px #f7cf5a",
+                        }}
+                      />
+                    </div>
+
+                    {/* Middle orbital ring (thin solid, CW) */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-[22px] rounded-full border border-[#f7cf5a]/50 pointer-events-none"
+                      style={{
+                        animation: "mon-ring-spin 22s linear infinite",
+                      }}
+                    >
+                      <span
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white"
+                        style={{
+                          boxShadow: "0 0 10px #ffffff",
+                        }}
+                      />
+                      <span
+                        className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#f7cf5a]"
+                        style={{
+                          boxShadow: "0 0 10px #f7cf5a",
+                        }}
+                      />
+                    </div>
+
+                    {/* Main MON sphere — real logo PNG */}
+                    <div
+                      className="absolute inset-[50px] rounded-full overflow-hidden shadow-[0_22px_56px_-10px_rgba(247,207,90,0.6)]"
+                      style={{
+                        animation:
+                          "coaching-planet-breathe 4s ease-in-out infinite",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/figma/image1.png"
+                        alt="لوگوی MON"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ objectPosition: "center top" }}
+                      />
+                      {/* Subtle top highlight sheen */}
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-full pointer-events-none"
+                        style={{
+                          background:
+                            "radial-gradient(circle at 35% 22%, rgba(255,255,255,0.22), transparent 45%)",
+                        }}
+                      />
+                      {/* Shimmer sweep overlay */}
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 rounded-full pointer-events-none mix-blend-overlay"
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(100deg, transparent 38%, rgba(255,255,255,0.42) 50%, transparent 62%)",
+                          backgroundSize: "220px 100%",
+                          animation: "mon-shimmer 3.6s linear infinite",
+                        }}
+                      />
+                    </div>
+
+                    {/* Outer soft halo */}
+                    <span
+                      aria-hidden
+                      className="absolute -inset-6 rounded-full blur-2xl pointer-events-none"
+                      style={{
+                        background:
+                          "radial-gradient(circle, rgba(247,207,90,0.42), transparent 60%)",
+                        animation:
+                          "coaching-aurora 3.2s ease-in-out infinite",
+                      }}
+                    />
+                  </div>
+
+                  {/* --- Left (RTL last): Slogan text (minimal motion) --- */}
+                  <div className="flex-1 text-right" dir="auto">
+                    {/* Eyebrow — line grows + label fades in */}
+                    <div className="mb-5 inline-flex items-center gap-3">
+                      <span
+                        aria-hidden
+                        className="block h-px w-[34px] origin-right"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, #f7cf5a, transparent)",
+                          animation:
+                            "mon-line-grow 0.9s cubic-bezier(0.22,1,0.36,1) 0.1s both",
+                        }}
+                      />
+                      <span
+                        className="text-[11.5px] tracking-[0.36em] font-extrabold text-[#f7cf5a] font-['Poppins:SemiBold',sans-serif]"
+                        style={{
+                          animation:
+                            "mon-reveal-up 0.8s cubic-bezier(0.22,1,0.36,1) 0.25s both",
+                        }}
+                      >
+                        NAMDAR · ALGORITHMIC TRADING
+                      </span>
+                    </div>
+
+                    {/* Headline — staggered reveal per line */}
+                    <h2
+                      className="font-['Yekan_Bakh:Bold',sans-serif] text-white leading-[1.15]"
+                      dir="auto"
+                    >
+                      <span
+                        className="block text-[44px] font-extrabold tracking-tight"
+                        style={{
+                          animation:
+                            "mon-reveal-up 0.9s cubic-bezier(0.22,1,0.36,1) 0.4s both",
+                        }}
+                      >
+                        جدیدترین سبک ترید{" "}
+                        {/* Gold word with continuous shimmer sweep */}
+                        <span
+                          className="inline-block"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(110deg, #d4a62a 0%, #f7cf5a 18%, #fff8e0 36%, #fff4d6 50%, #fff8e0 64%, #f7cf5a 82%, #d4a62a 100%)",
+                            backgroundSize: "220% 100%",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            backgroundClip: "text",
+                            filter:
+                              "drop-shadow(0 2px 12px rgba(247,207,90,0.4))",
+                            animation:
+                              "mon-gold-shimmer 4.2s linear infinite",
+                          }}
+                        >
+                          الگوریتمیک
+                        </span>
+                      </span>
+                      <span
+                        className="block text-[44px] font-extrabold tracking-tight mt-1"
+                        style={{
+                          animation:
+                            "mon-reveal-up 0.9s cubic-bezier(0.22,1,0.36,1) 0.55s both",
+                        }}
+                      >
+                        در دنیا
+                      </span>
+                    </h2>
+
+                    {/* Supporting line — fades in last */}
+                    <p
+                      className="mt-4 text-[19px] text-white/80 font-['Yekan_Bakh:Medium',sans-serif] leading-[1.8] flex items-center gap-3 justify-end"
+                      dir="auto"
+                      style={{
+                        animation:
+                          "mon-reveal-up 0.9s cubic-bezier(0.22,1,0.36,1) 0.75s both",
+                      }}
+                    >
+                      <span>از مبتدی تا پیشرفته</span>
+                      <span
+                        aria-hidden
+                        className="inline-block w-[28px] h-px origin-left"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, transparent, #f7cf5a)",
+                          animation:
+                            "mon-line-grow 0.9s cubic-bezier(0.22,1,0.36,1) 0.9s both",
+                        }}
+                      />
+                    </p>
+                  </div>
+                </div>
+              </figure>
+
+              {/* ========== LEFT (RTL last) — ACTION CARD ========== */}
+              <aside className="relative flex items-center">
+                <div className="w-full bg-white rounded-[24px] border border-[#e5eaf5] shadow-[0_28px_70px_-22px_rgba(14,26,61,0.25)] overflow-hidden">
+                  {/* Gold top accent line */}
+                  <div
+                    aria-hidden
+                    className="h-[3px]"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, #f7cf5a, #e8bc3a, #d4a62a)",
+                    }}
+                  />
+
+                  <div className="p-8">
+                    {/* Eyebrow */}
+                    <div className="flex items-center gap-2 text-[11px] tracking-[0.32em] font-extrabold text-[#1b3c8a]/75 font-['Poppins:SemiBold',sans-serif] mb-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#f7cf5a] shadow-[0_0_8px_#f7cf5a]" />
+                      ENTRY · MON
+                    </div>
+
+                    {/* Title */}
+                    <h3
+                      className="font-['Yekan_Bakh:Bold',sans-serif] text-[26px] font-extrabold text-[#0e1a3d] leading-tight"
+                      dir="auto"
+                    >
+                      درخواست مشاوره رایگان
+                    </h3>
+                    <p
+                      className="text-[13.5px] text-[#0e1a3d]/60 leading-[1.9] mt-2 mb-5"
+                      dir="auto"
+                    >
+                      ساعات پاسخ‌گویی در روزهای کاری:
+                      <br />
+                      شنبه تا چهارشنبه — ساعت ۹:۰۰ الی ۱۸:۰۰
+                      <br />
+                      پنجشنبه — ساعت ۹:۰۰ الی ۱۴:۰۰
+                    </p>
+
+                    {/* Lead form — POSTs to /api/callback-requests with MON as related course */}
+                    <LeadForm
+                      source="landing-desktop-mon-hero"
+                      relatedCourseSlug="mon"
+                      relatedCourseTitle="کوچینگ MON"
+                      ctaLabel="درخواست مشاوره"
+                    />
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 my-5">
+                      <span className="flex-1 h-px bg-[#e5eaf5]" />
+                      <span className="text-[11px] text-[#0e1a3d]/45 font-bold">
+                        یا
+                      </span>
+                      <span className="flex-1 h-px bg-[#e5eaf5]" />
+                    </div>
+
+                    {/* Direct phone card */}
+                    <a
+                      href={contactTelHref}
+                      className="group flex items-center gap-3.5 py-[12px] px-4 rounded-xl bg-[#f7cf5a]/10 border border-[#f7cf5a]/30 hover:bg-[#f7cf5a]/16 hover:border-[#f7cf5a]/45 transition"
+                    >
+                      <span
+                        className="w-10 h-10 rounded-full flex items-center justify-center shadow-[0_6px_14px_-4px_rgba(212,166,42,0.6)]"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #fff4d6, #f7cf5a, #d4a62a)",
+                        }}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="#2d1c03"
+                        >
+                          <path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74-.03-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1C8.7 6.45 8.5 5.25 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z" />
+                        </svg>
+                      </span>
+                      <div className="flex-1" dir="ltr">
+                        <div className="text-[19px] font-extrabold text-[#0e1a3d] leading-none tabular-nums">
+                          {contactPhone}
+                        </div>
+                        <div
+                          className="text-[11px] text-[#0e1a3d]/60 mt-1 font-bold leading-[1.7]"
+                          dir="rtl"
+                        >
+                          ساعات پاسخ‌گویی در روزهای کاری:
+                          <br />
+                          شنبه تا چهارشنبه — ساعت ۹:۰۰ الی ۱۸:۰۰
+                          <br />
+                          پنجشنبه — ساعت ۹:۰۰ الی ۱۴:۰۰
+                        </div>
                       </div>
-                    </div>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#0e1a3d"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="opacity-30 group-hover:opacity-60 transition"
+                      >
+                        <line x1="19" y1="12" x2="5" y2="12" />
+                        <polyline points="12 19 5 12 12 5" />
+                      </svg>
+                    </a>
                   </div>
                 </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* ===== /MON · Clean Hero Banner ===== */}
+      {/* ===== Featured Videos Gallery — editorial, minimal ===== */}
+      <div
+        className="absolute left-[156px] right-[156px] top-[6760px]"
+        data-node-id="4:525"
+        data-name="Featured Videos"
+        dir="rtl"
+      >
+        {/* Header row */}
+        <div className="flex items-end justify-between pb-7 mb-10 border-b border-[#081738]/[0.08]">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <span
+                aria-hidden
+                className="h-px w-[34px]"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #1b3c8a, transparent)",
+                }}
+              />
+              <span className="text-[10.5px] tracking-[0.42em] font-extrabold text-[#1b3c8a]/70 font-['Poppins:SemiBold',sans-serif]">
+                NAMDAR · FILM
+              </span>
+            </div>
+            <h2
+              className="font-['Yekan_Bakh:Bold',sans-serif] text-[#081738] text-[52px] font-extrabold leading-none tracking-tight"
+              dir="auto"
+            >
+              ویدیوهای منتخب
+            </h2>
+          </div>
+
+          <Link
+            href="/articles"
+            className="group flex items-center gap-3 text-[14px] font-['Yekan_Bakh:Bold',sans-serif] font-extrabold text-[#081738] hover:text-[#1b3c8a] transition"
+          >
+            <span className="border-b border-dashed border-[#081738]/30 group-hover:border-[#1b3c8a] pb-0.5">
+              مشاهدهٔ همه
+            </span>
+            <span className="flex items-center justify-center w-9 h-9 rounded-full border border-[#081738]/15 group-hover:border-[#1b3c8a]/50 group-hover:bg-[#1b3c8a]/[0.04] transition">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-transform group-hover:-translate-x-0.5"
+              >
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </span>
+          </Link>
+        </div>
+
+        {/* 3-column video grid (RTL: first item appears on right) */}
+        <div className="grid grid-cols-3 gap-8">
+          {[
+            {
+              idx: 1,
+              title: "معرفی دورهٔ کوچینگ MON",
+              category: "کوچینگ",
+              duration: "۵ دقیقه",
+              poster: "/figma/1.jpg",
+              videoUrl: rollupVideo2,
+            },
+            {
+              idx: 2,
+              title: "سخنرانی استاد امیرحسین نام‌آور",
+              category: "سخنرانی",
+              duration: "۱۲ دقیقه",
+              poster: "/figma/rectangle4496.jpg",
+              videoUrl: rollupVideo1,
+            },
+            {
+              idx: 3,
+              title: "مرور بازارهای جهانی و طلا",
+              category: "تحلیل",
+              duration: "۸ دقیقه",
+              poster: "/figma/rectangle4498.jpg",
+              videoUrl: rollupVideo3,
+            },
+          ].map((v) => (
+            <article
+              key={v.idx}
+              className="group relative"
+            >
+              {/* Number rail */}
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-[11px] tracking-[0.3em] font-extrabold text-[#1b3c8a]/65 font-['Poppins:SemiBold',sans-serif] tabular-nums">
+                  /{String(v.idx).padStart(2, "0")}
+                </span>
+                <span
+                  aria-hidden
+                  className="h-px flex-1 bg-[#081738]/10"
+                />
+                <span className="text-[10.5px] tracking-[0.22em] font-extrabold text-[#081738]/55 font-['Yekan_Bakh:Medium',sans-serif]">
+                  {v.category}
+                </span>
               </div>
-              <div className="absolute flex h-[11.227px] items-center justify-center left-[calc(41.67%+15.21px)] top-[6980.7px] w-[22.236px]">
-                <div className="flex-none rotate-[-26.79deg]">
-                  <div className="h-0 relative w-[24.91px]" data-node-id="4:414">
-                    <div className="absolute inset-[-2.73px_0_0_0]">
-                      <img alt="" className="block max-w-none size-full" src={imgLine6} />
+
+              {/* Video frame — portrait 3:4 */}
+              <div
+                className="relative aspect-[3/4] rounded-[16px] overflow-hidden"
+                style={{
+                  boxShadow:
+                    "0 30px 70px -22px rgba(8,23,56,0.35), 0 0 0 1px rgba(8,23,56,0.06)",
+                }}
+              >
+                <InlineVideo
+                  videoUrl={v.videoUrl}
+                  poster={v.poster}
+                  title={v.title}
+                  className="absolute inset-0 w-full h-full"
+                  buttonSize={84}
+                  variant="gold"
+                  overlay={
+                    <>
+                      {/* Top-to-bottom gradient for chip/title readability */}
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background:
+                            "linear-gradient(180deg, rgba(8,15,42,0.4) 0%, transparent 30%, transparent 55%, rgba(8,15,42,0.9) 100%)",
+                        }}
+                      />
+                      {/* Duration chip (RTL end = left) */}
+                      <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/15 text-[11px] font-extrabold text-white/90 font-['Yekan_Bakh:Medium',sans-serif] pointer-events-none">
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="9" />
+                          <polyline points="12 7 12 12 15 14" />
+                        </svg>
+                        {v.duration}
+                      </span>
+                      {/* FILM · HD chip (RTL start = right) */}
+                      <span className="absolute top-4 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f7cf5a]/15 backdrop-blur-md border border-[#f7cf5a]/40 text-[10px] tracking-[0.28em] font-extrabold text-[#f7cf5a] font-['Poppins:SemiBold',sans-serif] pointer-events-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#f7cf5a] shadow-[0_0_8px_#f7cf5a]" />
+                        FILM · HD
+                      </span>
+                      {/* Title at bottom */}
+                      <div className="absolute bottom-6 left-6 right-6 pointer-events-none">
+                        <h3
+                          className="font-['Yekan_Bakh:Bold',sans-serif] text-white text-[20px] font-extrabold leading-[1.55]"
+                          dir="auto"
+                          style={{
+                            textShadow:
+                              "0 2px 12px rgba(0,0,0,0.45)",
+                          }}
+                        >
+                          {v.title}
+                        </h3>
+                        <div className="mt-2 flex items-center gap-2 text-[11px] tracking-[0.22em] text-white/70 font-['Poppins:SemiBold',sans-serif] font-bold">
+                          <span
+                            aria-hidden
+                            className="inline-block w-5 h-px bg-[#f7cf5a]"
+                          />
+                          WATCH NOW
+                        </div>
+                      </div>
+                    </>
+                  }
+                />
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      {/* ===== Wall of Fame — افتخارات دانش‌پذیران ===== */}
+      {wallOfFameItems.length > 0 && (
+        <div
+          className="absolute left-[156px] right-[156px] top-[8420px]"
+          data-name="Wall of Fame"
+          dir="rtl"
+        >
+          {/* Header */}
+          <div className="flex items-end justify-between pb-7 mb-12 border-b border-[#081738]/[0.08]">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <span
+                  aria-hidden
+                  className="h-px w-[34px]"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #f7cf5a, transparent)",
+                  }}
+                />
+                <span className="text-[10.5px] tracking-[0.42em] font-extrabold text-[#1b3c8a]/70 font-['Poppins:SemiBold',sans-serif]">
+                  NAMDAR · HONORS
+                </span>
+              </div>
+              <h2
+                className="font-['Yekan_Bakh:Bold',sans-serif] text-[#081738] text-[56px] font-extrabold leading-none tracking-tight"
+                dir="auto"
+              >
+                دیوار افتخارات
+              </h2>
+              <p className="mt-4 text-[16px] text-[#081738]/65 font-['Yekan_Bakh:Regular',sans-serif] max-w-[640px] leading-[1.9]">
+                لحظه‌های موفقیت دانش‌پذیران آکادمی نامدار. هر تصویر یا ویدئو
+                روایتی از مسیر رشد یک معامله‌گر است.
+              </p>
+            </div>
+          </div>
+
+          {/* 3-column gallery */}
+          <div className="grid grid-cols-3 gap-8">
+            {wallOfFameItems.map((w) => (
+              <article
+                key={w.id}
+                className="group relative rounded-3xl overflow-hidden bg-[#081738]/[0.03] border border-[#081738]/[0.06]"
+              >
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  {w.kind === "video" ? (
+                    <InlineVideo
+                      videoUrl={w.url}
+                      poster={w.posterUrl}
+                      title={w.studentName ?? w.caption}
+                      className="absolute inset-0 w-full h-full"
+                      posterClassName="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-[1.04]"
+                      variant="gold"
+                      buttonSize={72}
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={w.url}
+                      alt={w.caption ?? w.studentName ?? ""}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] group-hover:scale-[1.04]"
+                    />
+                  )}
+                  {/* dark gradient overlay for caption legibility */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(to top, rgba(8,23,56,0.85) 0%, rgba(8,23,56,0.25) 45%, transparent 70%)",
+                    }}
+                  />
+                  {(w.studentName || w.caption) && (
+                    <div className="absolute bottom-0 right-0 left-0 p-6 pointer-events-none">
+                      {w.studentName && (
+                        <h3
+                          className="font-['Yekan_Bakh:Bold',sans-serif] text-white text-[22px] font-extrabold leading-tight"
+                          dir="auto"
+                          style={{
+                            textShadow:
+                              "0 2px 12px rgba(0,0,0,0.45)",
+                          }}
+                        >
+                          {w.studentName}
+                        </h3>
+                      )}
+                      {w.caption && (
+                        <p
+                          className="font-['Yekan_Bakh:Regular',sans-serif] text-white/85 text-[14px] mt-2 leading-[1.8]"
+                          dir="auto"
+                        >
+                          {w.caption}
+                        </p>
+                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
-              </div>
-              <div className="absolute flex h-[7.773px] items-center justify-center left-[calc(41.67%+24.64px)] top-[6985.84px] w-[15.394px]">
-                <div className="flex-none rotate-[-26.79deg]">
-                  <div className="h-0 relative w-[17.245px]" data-node-id="4:415">
-                    <div className="absolute inset-[-2.73px_0_0_0]">
-                      <img alt="" className="block max-w-none size-full" src={imgLine7} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute flex h-[4.75px] items-center justify-center left-[calc(41.67%+33.22px)] top-[6990.97px] w-[9.408px]">
-                <div className="flex-none rotate-[-26.79deg]">
-                  <div className="h-0 relative w-[10.539px]" data-node-id="4:416">
-                    <div className="absolute inset-[-2.73px_0_0_0]">
-                      <img alt="" className="block max-w-none size-full" src={imgLine8} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </article>
+            ))}
           </div>
         </div>
-      </div>
-      <p className="absolute font-['Yekan_Bakh:Bold',sans-serif] leading-[normal] left-[calc(50%+26px)] not-italic text-[22.129px] text-white top-[6300px] whitespace-nowrap" dir="auto" data-node-id="4:417">
-        جلسات آنلاین مشاوره
-      </p>
-      <div className="absolute left-[calc(25%+82px)] size-[93px] top-[6933px]" data-node-id="4:418" data-name="image 16">
-        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage18} />
-      </div>
-      <div className="absolute contents left-[calc(50%-1px)] top-[7164px]" data-node-id="4:419">
-        <div className="absolute left-[calc(83.33%-42.2px)] size-[112.981px] top-[7164px]" data-node-id="4:420">
-          <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse118} />
-        </div>
-        <div className="absolute flex h-[33.811px] items-center justify-center left-[calc(91.67%-80.75px)] top-[7273.22px] w-[34.987px]">
-          <div className="flex-none rotate-[-18.24deg]">
-            <div className="h-[26.317px] relative w-[28.164px]" data-node-id="4:421">
-              <div className="absolute bottom-1/4 left-[6.7%] right-[6.7%] top-0">
-                <img alt="" className="block max-w-none size-full" src={imgPolygon3} />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="absolute bg-[#73bcff] h-[193.009px] left-[calc(50%-1px)] rounded-[18.83px] top-[7387.14px] w-[196.775px]" data-node-id="4:422" />
-        <div className="absolute contents left-[calc(50%+17.83px)] top-[7195.07px]" data-node-id="4:423">
-          <div className="absolute h-[365.476px] left-[calc(50%+17.83px)] top-[7195.07px] w-[658.115px]" data-node-id="4:424">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup68} />
-          </div>
-          <div className="absolute contents left-[calc(50%+53.93px)] top-[7490.93px]" data-node-id="4:430">
-            <div className="absolute bg-[#3465e1] h-[38.675px] left-[calc(50%+53.93px)] rounded-[38.675px] shadow-[0px_6.446px_15.47px_0px_rgba(52,101,225,0.3)] top-[7490.93px] w-[116.024px]" data-node-id="4:431" />
-            <p className="absolute font-['Nunito_Sans:Bold',sans-serif] font-bold h-[22.56px] leading-[normal] left-[calc(50%+81.64px)] text-[16.759px] text-white top-[7498.67px] w-[59.946px]" data-node-id="4:432" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-              Present
-            </p>
-          </div>
-          <div className="absolute contents left-[calc(58.33%+35.73px)] top-[7490.93px]" data-node-id="4:433">
-            <div className="absolute bg-[#e13468] h-[38.675px] left-[calc(58.33%+35.73px)] rounded-[38.675px] shadow-[0px_6.446px_15.47px_0px_rgba(202,47,93,0.3)] top-[7490.93px] w-[116.024px]" data-node-id="4:434" />
-            <p className="absolute font-['Nunito_Sans:Bold',sans-serif] font-bold h-[22.56px] leading-[normal] left-[calc(58.33%+87.94px)] text-[16.759px] text-white top-[7498.67px] w-[31.584px]" data-node-id="4:435" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-              Call
-            </p>
-            <div className="absolute left-[calc(58.33%+67.96px)] size-[12.892px] top-[7503.82px]" data-node-id="4:436" data-name="phone 1">
-              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgPhone1} />
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(75%+37.72px)] top-[7265.33px]" data-node-id="4:438">
-            <div className="absolute contents left-[calc(75%+37.72px)] top-[7265.33px]" data-node-id="4:439" data-name="Mask Group">
-              <div className="absolute h-[121.799px] left-[calc(75%+23.02px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[14.7px_0px] mask-size-[125.999px_121.799px] top-[7265.33px] w-[156.239px]" data-node-id="4:441" style={{ maskImage: `url('${imgImage19}')` }} data-name="image 8">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage9} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(75%+44.44px)] top-[7364.03px]" data-node-id="4:442">
-              <div className="absolute backdrop-blur-[4.2px] bg-[rgba(201,211,231,0.4)] h-[16.38px] left-[calc(75%+44.44px)] rounded-[4.2px] top-[7364.03px] w-[63.84px]" data-node-id="4:443" />
-              <p className="absolute font-['Nunito_Sans:SemiBold',sans-serif] font-semibold h-[11.34px] leading-[normal] left-[calc(75%+58.3px)] text-[8.4px] text-white top-[7366.55px] w-[45.78px]" data-node-id="4:444" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-                Adam Levin
-              </p>
-              <div className="absolute contents left-[calc(75%+48.64px)] top-[7369.49px]" data-node-id="4:445">
-                <div className="absolute bg-white h-[2.94px] left-[calc(75%+48.64px)] rounded-[0.42px] top-[7372.43px] w-[1.26px]" data-node-id="4:446" />
-                <div className="absolute bg-white h-[4.41px] left-[calc(75%+50.74px)] rounded-[0.42px] top-[7370.96px] w-[1.26px]" data-node-id="4:447" />
-                <div className="absolute bg-white h-[5.88px] left-[calc(75%+52.84px)] rounded-[0.42px] top-[7369.49px] w-[1.26px]" data-node-id="4:448" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(66.67%+45.26px)] top-[7265.33px]" data-node-id="4:449">
-            <div className="absolute contents left-[calc(66.67%+45.26px)] top-[7265.33px]" data-node-id="4:450" data-name="Mask Group">
-              <div className="absolute h-[119.279px] left-[calc(66.67%+35.18px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[10.08px_-2.52px] mask-size-[125.999px_121.799px] top-[7267.85px] w-[146.159px]" data-node-id="4:452" style={{ maskImage: `url('${imgImage19}')` }} data-name="image 7">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage10} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(66.67%+51.98px)] top-[7364.03px]" data-node-id="4:453">
-              <div className="absolute backdrop-blur-[4.2px] bg-[rgba(201,211,231,0.4)] h-[16.38px] left-[calc(66.67%+51.98px)] rounded-[4.2px] top-[7364.03px] w-[73.5px]" data-node-id="4:454" />
-              <p className="absolute font-['Nunito_Sans:SemiBold',sans-serif] font-semibold h-[11.34px] leading-[normal] left-[calc(66.67%+65.84px)] text-[8.4px] text-white top-[7366.55px] w-[55.44px]" data-node-id="4:455" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-                Tamara Clarke
-              </p>
-              <div className="absolute contents left-[calc(66.67%+56.18px)] top-[7369.49px]" data-node-id="4:456">
-                <div className="absolute bg-white h-[2.94px] left-[calc(66.67%+56.18px)] rounded-[0.42px] top-[7372.43px] w-[1.26px]" data-node-id="4:457" />
-                <div className="absolute bg-white h-[4.41px] left-[calc(66.67%+58.28px)] rounded-[0.42px] top-[7370.96px] w-[1.26px]" data-node-id="4:458" />
-                <div className="absolute bg-white h-[5.88px] left-[calc(66.67%+60.38px)] rounded-[0.42px] top-[7369.49px] w-[1.26px]" data-node-id="4:459" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(50%+53.61px)] top-[7264.74px]" data-node-id="4:460">
-            <div className="absolute contents left-[calc(50%+61.34px)] top-[7284.72px]" data-node-id="4:461" data-name="Mask Group">
-              <div className="absolute h-[171.974px] left-[calc(50%+32.28px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[29.058px_0px] mask-size-[177.904px_171.974px] opacity-50 rounded-[12.892px] top-[7284.72px] w-[256.774px]" data-node-id="4:463" style={{ maskImage: `url('${imgPortraitTeacherGivingOnlineClass4}')` }} data-name="portrait-teacher-giving-online-class 1">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[12.892px] size-full" src={imgPortraitTeacherGivingOnlineClass2} />
-              </div>
-            </div>
-            <div className="absolute h-[186.928px] left-[calc(50%+53.61px)] top-[7264.74px] w-[193.374px]" data-node-id="4:464" data-name="Mask Group">
-              <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgMaskGroup} />
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(66.67%+45.26px)] top-[7406.03px]" data-node-id="4:468">
-            <div className="absolute contents left-[calc(66.67%+45.26px)] top-[7406.03px]" data-node-id="4:469" data-name="Mask Group">
-              <div className="absolute h-[189.419px] left-[calc(66.67%+45.26px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[0px_0px] mask-size-[125.999px_121.799px] top-[7406.03px] w-[125.999px]" data-node-id="4:471" style={{ maskImage: `url('${imgImage19}')` }} data-name="image 11">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage11} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(66.67%+51.98px)] top-[7504.73px]" data-node-id="4:472">
-              <div className="absolute backdrop-blur-[4.2px] bg-[rgba(201,211,231,0.4)] h-[16.38px] left-[calc(66.67%+51.98px)] rounded-[4.2px] top-[7504.73px] w-[85.679px]" data-node-id="4:473" />
-              <p className="absolute font-['Nunito_Sans:SemiBold',sans-serif] font-semibold h-[11.34px] leading-[normal] left-[calc(66.67%+65.84px)] text-[8.4px] text-white top-[7507.25px] w-[67.62px]" data-node-id="4:474" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-                Humbert Holland
-              </p>
-              <div className="absolute contents left-[calc(66.67%+56.18px)] top-[7510.19px]" data-node-id="4:475">
-                <div className="absolute bg-white h-[2.94px] left-[calc(66.67%+56.18px)] rounded-[0.42px] top-[7513.13px] w-[1.26px]" data-node-id="4:476" />
-                <div className="absolute bg-white h-[4.41px] left-[calc(66.67%+58.28px)] rounded-[0.42px] top-[7511.66px] w-[1.26px]" data-node-id="4:477" />
-                <div className="absolute bg-white h-[5.88px] left-[calc(66.67%+60.38px)] rounded-[0.42px] top-[7510.19px] w-[1.26px]" data-node-id="4:478" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(75%+37.72px)] top-[7406.03px]" data-node-id="4:479">
-            <div className="absolute contents left-[calc(75%+37.72px)] top-[7406.03px]" data-node-id="4:480" data-name="Mask Group">
-              <div className="absolute left-[calc(75%+11.26px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[26.46px_18.9px] mask-size-[125.999px_121.799px] size-[178.919px] top-[7387.13px]" data-node-id="4:482" style={{ maskImage: `url('${imgImage19}')` }} data-name="image 10">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage13} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(75%+44.44px)] top-[7504.73px]" data-node-id="4:483">
-              <div className="absolute backdrop-blur-[4.2px] bg-[rgba(201,211,231,0.4)] h-[16.38px] left-[calc(75%+44.44px)] rounded-[4.2px] top-[7504.73px] w-[83.579px]" data-node-id="4:484" />
-              <p className="absolute font-['Nunito_Sans:SemiBold',sans-serif] font-semibold h-[11.34px] leading-[normal] left-[calc(75%+58.3px)] text-[8.4px] text-white top-[7507.25px] w-[65.52px]" data-node-id="4:485" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-                Patricia Mendoza
-              </p>
-              <div className="absolute contents left-[calc(75%+48.64px)] top-[7510.19px]" data-node-id="4:486">
-                <div className="absolute bg-white h-[2.94px] left-[calc(75%+48.64px)] rounded-[0.42px] top-[7513.13px] w-[1.26px]" data-node-id="4:487" />
-                <div className="absolute bg-white h-[4.41px] left-[calc(75%+50.74px)] rounded-[0.42px] top-[7511.66px] w-[1.26px]" data-node-id="4:488" />
-                <div className="absolute bg-white h-[5.88px] left-[calc(75%+52.84px)] rounded-[0.42px] top-[7510.19px] w-[1.26px]" data-node-id="4:489" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute backdrop-blur-[4.708px] bg-[rgba(136,167,227,0.1)] h-[363.423px] left-[calc(50%+17.83px)] rounded-[18.83px] top-[7196.95px] w-[658.115px]" data-node-id="4:490" />
-        </div>
-        <div className="absolute contents left-[calc(50%+121.4px)] top-[7294.87px]" data-node-id="4:491">
-          <div className="absolute bg-white h-[368.13px] left-[calc(50%+121.4px)] rounded-[18.83px] shadow-[0px_18.83px_47.075px_0px_rgba(47,50,125,0.1)] top-[7294.87px] w-[591.268px]" data-node-id="4:492" />
-          <div className="absolute bg-[#eaeaea] h-[24.479px] left-[calc(50%+121.4px)] rounded-tl-[18.83px] rounded-tr-[18.83px] top-[7294.87px] w-[591.268px]" data-node-id="4:493" />
-          <div className="absolute contents left-[calc(58.33%+14.99px)] top-[7356.07px]" data-node-id="4:494">
-            <div className="absolute contents left-[calc(58.33%+14.99px)] top-[7356.07px]" data-node-id="4:495" data-name="Mask Group">
-              <div className="absolute h-[192.538px] left-[calc(58.33%-17.55px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[32.532px_0px] mask-size-[199.177px_192.538px] rounded-[12.892px] top-[7356.07px] w-[287.479px]" data-node-id="4:497" style={{ maskImage: `url('${imgPortraitTeacherGivingOnlineClass5}')` }} data-name="portrait-teacher-giving-online-class 1">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[12.892px] size-full" src={imgPortraitTeacherGivingOnlineClass2} />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(75%-22.48px)] top-[7356.07px]" data-node-id="4:498">
-            <div className="absolute contents left-[calc(75%-22.48px)] top-[7356.07px]" data-node-id="4:499" data-name="Mask Group">
-              <div className="absolute left-[calc(66.67%+95.76px)] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[41.759px_29.829px] mask-size-[198.853px_192.225px] size-[282.372px] top-[7326.24px]" data-node-id="4:501" style={{ maskImage: `url('${imgImage20}')` }} data-name="image 10">
-                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage13} />
-              </div>
-            </div>
-            <div className="absolute contents left-[calc(75%-11.88px)] top-[7511.84px]" data-node-id="4:502">
-              <div className="absolute backdrop-blur-[6.628px] bg-[rgba(201,211,231,0.4)] h-[25.851px] left-[calc(75%-11.88px)] rounded-[6.628px] top-[7511.84px] w-[131.906px]" data-node-id="4:503" />
-              <p className="absolute font-['Nunito_Sans:SemiBold',sans-serif] font-semibold h-[17.897px] leading-[normal] left-[calc(75%+9.99px)] text-[13.257px] text-white top-[7515.81px] w-[103.404px]" data-node-id="4:504" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-                Patricia Mendoza
-              </p>
-              <div className="absolute contents left-[calc(75%-5.25px)] top-[7520.45px]" data-node-id="4:505">
-                <div className="absolute bg-white h-[4.64px] left-[calc(75%-5.25px)] rounded-[0.663px] top-[7525.09px] w-[1.989px]" data-node-id="4:506" />
-                <div className="absolute bg-white h-[6.96px] left-[calc(75%-1.94px)] rounded-[0.663px] top-[7522.77px] w-[1.989px]" data-node-id="4:507" />
-                <div className="absolute bg-white h-[9.28px] left-[calc(75%+1.38px)] rounded-[0.663px] top-[7520.45px] w-[1.989px]" data-node-id="4:508" />
-              </div>
-            </div>
-          </div>
-          <div className="absolute contents left-[calc(75%-2.71px)] top-[7588.62px]" data-node-id="4:509">
-            <div className="absolute bg-[#eb493a] blur-[25.421px] h-[27.304px] left-[calc(75%+8.58px)] rounded-[56.491px] top-[7611.22px] w-[172.296px]" data-node-id="4:510" />
-            <div className="absolute h-[54.608px] left-[calc(75%-2.71px)] rounded-[56.491px] top-[7588.62px] w-[197.717px]" data-node-id="4:511" style={{ backgroundImage: "linear-gradient(135.1193414236296deg, rgb(245, 84, 84) 19.572%, rgb(229, 66, 43) 78.846%)" }} />
-            <p className="-translate-x-1/2 absolute font-['Yekan_Bakh:Medium',sans-serif] h-[31.07px] leading-[normal] left-[calc(75%+94.67px)] not-italic text-[20.713px] text-center text-white top-[7601px] w-[155.349px]" dir="auto" data-node-id="4:512">
-              پایان مکالمه
-            </p>
-          </div>
-          <p className="-translate-x-full absolute font-['Yekan_Bakh:Bold',sans-serif] h-[36px] leading-[1.6] left-[calc(58.33%+262px)] not-italic text-[#696984] text-[22.596px] text-right top-[7580px] w-[236px]" dir="auto" data-node-id="4:513">
-            تماس دوره ای مشاوره
-          </p>
-          <p className="absolute font-['Nunito_Sans:SemiBold',sans-serif] font-semibold h-[27.304px] leading-[1.6] left-[calc(58.33%-0.94px)] text-[#a8a8b6] text-[16.947px] top-[7616.87px] w-[262.681px]" data-node-id="4:514" style={{ fontVariationSettings: "'YTLC' 500, 'wdth' 100" }}>
-            Your video can’t be seen by others
-          </p>
-          <div className="absolute h-[12.24px] left-[calc(58.33%-10.36px)] top-[7300.99px] w-[48.958px]" data-node-id="4:515">
-            <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup102} />
-          </div>
-          <div className="absolute flex h-[197.717px] items-center justify-center left-[calc(66.67%+97.03px)] top-[7356.07px] w-0">
-            <div className="flex-none rotate-90">
-              <div className="h-0 relative w-[197.717px]" data-node-id="4:519">
-                <div className="absolute inset-[-0.94px_0_0_0]">
-                  <img alt="" className="block max-w-none size-full" src={imgLine9} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="absolute flex items-center justify-center left-[calc(50%+63.02px)] size-[111.025px] top-[7322.17px]">
-          <div className="flex-none rotate-[-6.16deg]">
-            <div className="relative size-[100.79px]" data-node-id="4:520">
-              <div className="absolute inset-[-35.5%_-44.84%_-54.18%_-44.84%]">
-                <img alt="" className="block max-w-none size-full" src={imgGroup105} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="absolute h-[908px] left-[-231px] rounded-[5px] top-[7862px] w-[705px]" data-node-id="4:525">
-        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[5px] size-full" src={imgRectangle4496} />
-      </div>
-      <div className="absolute bg-black h-[908px] left-[calc(25%+86px)] rounded-[5px] top-[7862px] w-[705px]" data-node-id="4:526" />
-      <div className="absolute h-[908px] right-[-144px] rounded-[5px] top-[7862px] w-[705px]" data-node-id="4:527">
-        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[5px] size-full" src={imgRectangle4498} />
-      </div>
-      <div className="absolute bg-[rgba(0,0,0,0.62)] h-[908px] right-[-144px] rounded-[5px] top-[7862px] w-[705px]" data-node-id="4:528" />
-      <div className="absolute right-[170.52px] size-[153.484px] top-[8239px]" data-node-id="4:529">
-        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup1000001986} />
-      </div>
-      <p className="absolute font-['Yekan_Bakh:Regular',sans-serif] h-[163px] leading-[1.8] not-italic right-[36px] text-[24px] text-right text-white top-[8562px] tracking-[0.48px] w-[465px]" dir="auto" data-node-id="4:533">
-        لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و
-      </p>
-      <div className="absolute h-[908px] left-[calc(25%+132px)] top-[7862px] w-[602px]" data-node-id="4:534" data-name="رول اپ چهارم 1">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <img alt="" className="absolute h-[156.06%] left-[-0.02%] max-w-none top-0 w-[100.05%]" src={img1} />
-        </div>
-      </div>
-      <div className="absolute bg-[rgba(0,0,0,0.62)] h-[908px] left-[calc(25%+87px)] rounded-[5px] top-[7862px] w-[705px]" data-node-id="4:535" />
-      <div className="absolute bg-[rgba(0,0,0,0.62)] h-[908px] left-[-226px] rounded-[5px] top-[7862px] w-[705px]" data-node-id="4:536" />
-      <div className="absolute right-[calc(41.67%+130.52px)] size-[153.484px] top-[8229px]" data-node-id="4:537">
-        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup1000001987} />
-      </div>
-      <div className="absolute right-[calc(91.67%-48.48px)] size-[153.484px] top-[8229px]" data-node-id="4:541">
-        <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgGroup1000001987} />
-      </div>
-      <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] h-[163px] leading-[1.8] left-[calc(33.33%+516px)] not-italic text-[24px] text-right text-white top-[8562.48px] tracking-[0.48px] w-[465px]" dir="auto" data-node-id="4:545">
-        لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و
-      </p>
-      <div className="absolute flex h-[154px] items-center justify-center left-[-22px] top-[8562px] w-[441px]">
-        <div className="-scale-y-100 flex-none rotate-180">
-          <p className="font-['Yekan_Bakh:Regular',sans-serif] h-[154px] leading-[1.8] not-italic relative text-[24px] text-white tracking-[0.48px] w-[441px]" dir="auto" data-node-id="4:546">
-            لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ، و با استفاده از طراحان گرافیک است، چاپگرها و متون بلکه روزنامه و
-          </p>
-        </div>
-      </div>
-      <div className="absolute contents left-[calc(50%+99px)] top-[9088px]" data-node-id="4:547">
-        <div className="absolute contents left-[calc(50%+99px)] top-[9088px]" data-node-id="4:548">
-          <div className="absolute h-[340px] left-[calc(50%+99px)] rounded-[20px] top-[9088px] w-[640px]" data-node-id="4:549">
-            <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[20px] size-full" src={imgRectangle32} />
-          </div>
-          <div className="absolute bg-[#171b41] h-[340px] left-[calc(50%+99px)] opacity-10 rounded-[20px] top-[9088px] w-[640px]" data-node-id="4:550" />
-        </div>
-        <p className="-translate-x-full absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[1.8] left-[calc(50%+738px)] not-italic text-[#252641] text-[26px] text-right top-[9523px] w-[609px]" dir="auto" data-node-id="4:551">
-          لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-        </p>
-        <p className="-translate-x-full absolute font-['Yekan_Bakh:Regular',sans-serif] leading-[1.8] left-[calc(50%+738px)] not-italic text-[#696984] text-[20px] text-right top-[9637px] tracking-[0.4px] w-[609px]" dir="auto" data-node-id="4:552">
-          لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است
-        </p>
-        <p className="[text-decoration-skip-ink:none] absolute decoration-solid font-['Yekan_Bakh:Regular',sans-serif] leading-[1.8] left-[calc(83.33%+7px)] not-italic text-[#696984] text-[20px] top-[9728px] tracking-[0.4px] underline whitespace-nowrap" dir="auto" data-node-id="4:553">
-          مطالعه بیشتر
-        </p>
-        <div className="absolute contents left-[calc(50%+99px)] top-[9468px]" data-node-id="4:554">
-          <div className="absolute bg-[#49bbbd] h-[40px] left-[calc(50%+99px)] rounded-[80px] top-[9468px] w-[130px]" data-node-id="4:555" />
-          <p className="absolute font-['Yekan_Bakh:Medium',sans-serif] leading-[1.8] left-[calc(58.33%-8px)] not-italic text-[20px] text-white top-[9470px] tracking-[0.4px] whitespace-nowrap" dir="auto" data-node-id="4:556">
-            خبر
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

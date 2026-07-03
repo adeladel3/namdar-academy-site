@@ -1,9 +1,155 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
+/* همه‌ی فونت‌ها از /public/fonts بارگذاری می‌شوند — هیچ ارتباطی با
+ * fonts.googleapis.com یا fonts.gstatic.com برقرار نمی‌شود. */
 @theme inline {
-  --font-vazirmatn: var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
-  --font-poppins: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-  --font-iransans: "IRANSans", "IRANSansX", var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+  --font-vazirmatn: "Vazirmatn", "IRANSans", ui-sans-serif, system-ui, sans-serif;
+  --font-poppins: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-nunito-sans: "Nunito Sans", "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-roboto: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-cinzel: "Cinzel", "Times New Roman", serif;
+  --font-iransans: "IRANSans", "IRANSansX", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Vazirmatn (پشتیبان فارسی) — اگر فایل .woff2 در پوشه قرار داده شد،
+ *   به‌صورت لوکال سرو می‌شود؛ در غیر این صورت local() از فونت نصب‌شده
+ *   روی دستگاه استفاده می‌کند. */
+@font-face {
+  font-family: "Vazirmatn";
+  src: local("Vazirmatn"), local("Vazirmatn-Regular"),
+       url("/fonts/vazirmatn/Vazirmatn-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: local("Vazirmatn Medium"), local("Vazirmatn-Medium"),
+       url("/fonts/vazirmatn/Vazirmatn-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: local("Vazirmatn SemiBold"), local("Vazirmatn-SemiBold"),
+       url("/fonts/vazirmatn/Vazirmatn-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: local("Vazirmatn Bold"), local("Vazirmatn-Bold"),
+       url("/fonts/vazirmatn/Vazirmatn-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: local("Vazirmatn ExtraBold"), local("Vazirmatn-ExtraBold"),
+       url("/fonts/vazirmatn/Vazirmatn-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vazirmatn";
+  src: local("Vazirmatn Black"), local("Vazirmatn-Black"),
+       url("/fonts/vazirmatn/Vazirmatn-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Poppins (لاتین، عناوین Figma) ──────────────────────────────────── */
+@font-face {
+  font-family: "Poppins";
+  src: local("Poppins"), local("Poppins-Regular"),
+       url("/fonts/poppins/Poppins-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: local("Poppins Medium"), local("Poppins-Medium"),
+       url("/fonts/poppins/Poppins-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: local("Poppins SemiBold"), local("Poppins-SemiBold"),
+       url("/fonts/poppins/Poppins-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: local("Poppins Bold"), local("Poppins-Bold"),
+       url("/fonts/poppins/Poppins-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Nunito Sans ────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "Nunito Sans";
+  src: local("Nunito Sans"), local("NunitoSans-Regular"),
+       url("/fonts/nunito-sans/NunitoSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito Sans";
+  src: local("Nunito Sans SemiBold"), local("NunitoSans-SemiBold"),
+       url("/fonts/nunito-sans/NunitoSans-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito Sans";
+  src: local("Nunito Sans Bold"), local("NunitoSans-Bold"),
+       url("/fonts/nunito-sans/NunitoSans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Roboto ─────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "Roboto";
+  src: local("Roboto Medium"), local("Roboto-Medium"),
+       url("/fonts/roboto/Roboto-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Cinzel (سرتیترهای دکوراتیو) ────────────────────────────────────── */
+@font-face {
+  font-family: "Cinzel";
+  src: local("Cinzel"), local("Cinzel-Regular"),
+       url("/fonts/cinzel/Cinzel-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cinzel";
+  src: local("Cinzel Bold"), local("Cinzel-Bold"),
+       url("/fonts/cinzel/Cinzel-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
 /* IRANSans — primary site typography.
@@ -116,9 +262,84 @@
   font-weight: 300;
 }
 
+html,
+body {
+  /* قفل سختگیرانه‌ی پهنا روی پهنای دیداری.
+   * در حالت راست‌چین (dir="rtl") تنها overflow-x: hidden روی سافاری
+   * موبایل اگر یک عنصر دکوراتیو با left/right منفی از کادر بزنه بیرون،
+   * سند هنوز هم می‌تونه گسترده‌تر از viewport محاسبه بشه و نتیجه‌اش
+   * این می‌شه که محتوای لبه‌ی چپ از قاب صفحه بیرون می‌افته.
+   * استفاده از overflow-x: clip + max-width: 100vw روی هر دو ریشه،
+   * مرز پهنا رو سختگیرانه به viewport گره می‌زنه. */
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
 body {
   font-family: var(--font-iransans);
   color: #010514;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* پوشش امن لایه‌ی بیرونی: روی موبایل (زیر ۱۰۲۴px) محتوای اصلی صفحه
+ * هرگز نباید از پهنای دیداری بزرگ‌تر بشه. این قانون به‌صورت دفاعی
+ * هر کانتینر اولِ <main> رو هم به viewport قفل می‌کنه تا اگر فرزندی
+ * (مثل لکه‌های نوری دکوراتیو با -right یا -left منفی) سعی کرد سند
+ * رو پهن‌تر کنه، کلیپ بشه. */
+@media (max-width: 1023px) {
+  main {
+    max-width: 100vw;
+    overflow-x: clip;
+  }
+}
+
+/* Make every interactive tap target at least 40px high on coarse pointers
+ * (touchscreens). This keeps buttons and links reliably tappable on phones
+ * without changing the visual design on desktop. */
+@media (pointer: coarse) {
+  button,
+  a[role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 40px;
+  }
+}
+
+/* ── Scroll-perf hardening ────────────────────────────────────────────────
+ * `backdrop-filter: blur(...)` is GPU-expensive: every frame the browser has
+ * to re-render the layer underneath, downsample it, blur it, and composite.
+ * The Figma export gives us a dozen `backdrop-blur-md` chips on the Landing
+ * page (search-box halo, hero badges, course-card pill chips, etc.). On
+ * mid-range Android phones — which is most of the visitor base — this
+ * regularly drops scroll under 30fps.
+ *
+ * Strategy: on touch devices, keep the soft translucent fill (so the
+ * glass-chip look survives) but drop the blur entirely. The visual delta
+ * is tiny on a phone screen; the scroll-fluidity delta is huge. Desktops
+ * keep the full design.
+ */
+@media (hover: none) and (pointer: coarse) {
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* Respect OS-level reduced-motion preference: disable our keyframe
+ * animations entirely, including the MON logo drift/ring/pulse loops, so
+ * users who marked "Reduce motion" in iOS/Android/Windows don't pay the
+ * continuous repaint cost. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Any element that references a Figma Yekan_Bakh alias but the @font-face
@@ -142,8 +363,97 @@ body {
   transform: scale(var(--figma-scale, 1));
 }
 
+/* Native <dialog> reset for the landing popups. The UA default puts
+ * <dialog> in the centre with a white box and margin:auto; we replace
+ * that with our own centred flex layout. ::backdrop is the built-in
+ * scrim — styling it instead of layering a button backdrop lets the
+ * browser keep everything on the top layer, which is what eliminates
+ * the modal-open "kick" on this page. */
+dialog.hub-detail-dialog,
+dialog.hub-feature-dialog {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 20px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: auto;
+  display: grid;
+  place-items: center;
+}
+dialog.hub-detail-dialog:not([open]),
+dialog.hub-feature-dialog:not([open]) {
+  display: none;
+}
+dialog.hub-detail-dialog::backdrop,
+dialog.hub-feature-dialog::backdrop {
+  background: rgba(6, 12, 30, 0.18);
+}
+
 .figma-stage {
   width: 100%;
   overflow: hidden;
   position: relative;
+}
+
+/* Cinematic coaching hero — planet & aurora motion */
+@keyframes coaching-planet-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes coaching-planet-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.018); }
+}
+@keyframes coaching-aurora {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.95; transform: scale(1.06); }
+}
+@keyframes coaching-drift {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-14px); }
+}
+@keyframes coaching-star-twinkle {
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 0.35; }
+}
+@keyframes coaching-reveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* MON logo — animated hero mark */
+@keyframes mon-drift {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes mon-ring-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes mon-shimmer {
+  0%   { background-position: -220px 0; }
+  100% { background-position: 220px 0; }
+}
+@keyframes mon-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.75; }
+  80%  { transform: scale(1.25); opacity: 0; }
+  100% { transform: scale(1.25); opacity: 0; }
+}
+@keyframes mon-gold-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes mon-line-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes mon-reveal-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

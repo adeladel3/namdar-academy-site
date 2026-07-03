@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { generateId, listTags, upsertTag } from "@/lib/db";
+import { slugifyTitle } from "@/lib/slug";
 
 export async function GET() {
   const guard = await requireStaff();
@@ -19,10 +20,7 @@ export async function POST(req: Request) {
   }
   const name = body.name?.trim();
   if (!name) return NextResponse.json({ error: "نام الزامی است" }, { status: 400 });
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9\u0600-\u06FF]+/gi, "-")
-    .replace(/^-|-$/g, "");
+  const slug = slugifyTitle(name);
   const existing = listTags().find((t) => t.name === name);
   if (existing) return NextResponse.json({ success: true, id: existing.id });
   const id = generateId("tag");

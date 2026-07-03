@@ -6,8 +6,10 @@ import {
   Button,
   Card,
   CardHeader,
+  Combobox,
   Field,
   Input,
+  JalaliDatePicker,
   Modal,
   Select,
   Toggle,
@@ -329,28 +331,23 @@ function DiscountModal({
             />
           </Field>
           <Field label="تاریخ انقضا (اختیاری)">
-            <Input
-              type="date"
+            <JalaliDatePicker
               value={form.expiresAt}
-              onChange={(e) =>
-                setForm({ ...form, expiresAt: e.target.value })
-              }
-              dir="ltr"
+              onChange={(v) => setForm({ ...form, expiresAt: v })}
+              placeholder="بدون انقضا"
             />
           </Field>
         </div>
         <Field label="محدود به دوره (اختیاری)">
-          <Select
+          <Combobox
             value={form.courseSlug}
-            onChange={(e) => setForm({ ...form, courseSlug: e.target.value })}
-          >
-            <option value="">سراسری (همه دوره‌ها)</option>
-            {courses.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.title}
-              </option>
-            ))}
-          </Select>
+            onChange={(v) => setForm({ ...form, courseSlug: v })}
+            options={[
+              { value: "", label: "سراسری (همه دوره‌ها)" },
+              ...courses.map((c) => ({ value: c.slug, label: c.title })),
+            ]}
+            placeholder="سراسری (همه دوره‌ها)"
+          />
         </Field>
         <Toggle
           checked={form.active}

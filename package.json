@@ -1,15 +1,26 @@
 {
   "name": "namdar-academy",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "نامدار آکادمی — سایت آموزش ترید و سرمایه‌گذاری استاد امیرحسین نام‌آور",
+  "author": "Namdar Academy",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit",
+    "deploy:bundle": "next build && tar -czf deploy/namdar-build.tar.gz .next/standalone .next/static public",
+    "db:backup": "cp data/db.json data/db.json.$(date +%Y%m%d-%H%M%S).bak",
+    "clean:mac": "find . \\( -name '._*' -o -name '.DS_Store' \\) -not -path './node_modules/*' -not -path './.next/*' -not -path './.git/*' -delete"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/qrcode": "^1.5.6",
+    "isomorphic-dompurify": "^3.10.0",
     "next": "16.2.3",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -22,5 +33,14 @@
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "browserslist": [
+    ">0.3%",
+    "last 2 versions",
+    "Firefox ESR",
+    "not dead"
+  ]
 }

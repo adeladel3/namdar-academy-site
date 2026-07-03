@@ -1,0 +1,3 @@
+module.exports=[76013,a=>{"use strict";var b=a.i(7997);a.s(["default",0,function(){return(0,b.jsx)("div",{"aria-busy":"true","aria-live":"polite",className:"min-h-[60vh] flex items-center justify-center",children:(0,b.jsxs)("div",{className:"flex items-center gap-3 text-[#1b3c8a]/70 text-sm",children:[(0,b.jsx)("span",{className:"inline-block w-4 h-4 rounded-full border-2 border-[#1b3c8a]/25 border-t-[#1b3c8a] animate-spin","aria-hidden":!0}),"در حال بارگذاری…"]})})}])},66478,a=>{a.n(a.i(76013))}];
+
+//# sourceMappingURL=src_app_%28site%29_loading_tsx_03x3p5f._.js.map

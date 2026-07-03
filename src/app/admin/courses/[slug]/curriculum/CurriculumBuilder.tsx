@@ -630,6 +630,12 @@ function LessonDrawer({
           <Field label="آدرس ویدیو">
             <MediaPicker
               kind="video"
+              recommended={{
+                maxSizeKB: 200 * 1024,
+                formats: ["MP4", "WEBM"],
+                description:
+                  "ویدئوی درس / پیش‌نمایش دوره.",
+              }}
               value={form.videoUrl}
               onChange={(url) => setForm({ ...form, videoUrl: url })}
             />

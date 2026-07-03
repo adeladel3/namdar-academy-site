@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, Field, Input, Select, Textarea, toast } from "@/components/admin/ui";
 import type { CategoryRecord } from "@/lib/db";
+import { isValidSlug, slugifyTitle } from "@/lib/slug";
 
 const LEVELS = [
   { key: "beginner", label: "مقدماتی" },
@@ -35,23 +36,17 @@ export default function NewCourseWizard({
     if (errors[k]) setErrors({ ...errors, [k]: "" });
   }
 
-  function autoSlug(title: string) {
-    // Strip everything except ASCII letters, digits, spaces and hyphens, then
-    // collapse whitespace into hyphens. Persian/Arabic chars are dropped
-    // because they don't URL-encode cleanly in dynamic route segments.
-    return title
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/gi, "")
-      .replace(/\s+/g, "-");
-  }
+  // عنوان به آدرس فارسی تبدیل می‌شود (مثلاً «سمینار سقوط» → «سمینار-سقوط»).
+  // فینگیلیش (transliteration) ساخته نمی‌شود — مرورگرهای مدرن آدرس فارسی
+  // را در نوار آدرس و SEO به‌درستی نمایش می‌دهند.
+  const autoSlug = slugifyTitle;
 
   function validate() {
     const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = "عنوان الزامی است";
-    if (!form.slug.trim()) e.slug = "slug الزامی است";
-    else if (!/^[a-z0-9-]+$/i.test(form.slug))
-      e.slug = "slug باید فقط حروف انگلیسی، عدد و خط تیره باشد";
+    if (!form.slug.trim()) e.slug = "آدرس الزامی است";
+    else if (!isValidSlug(form.slug))
+      e.slug = "آدرس فقط می‌تواند شامل حروف فارسی/انگلیسی، عدد و خط تیره باشد";
     if (!form.shortDesc.trim()) e.shortDesc = "توضیح کوتاه الزامی است";
     if (!form.instructor.trim()) e.instructor = "نام مدرس الزامی است";
     if (!form.isFree && form.price <= 0)

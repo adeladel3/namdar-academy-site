@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { usePathname } from "next/navigation";
 import { cx } from "@/components/admin/ui";
 import { Icon } from "@/components/admin/Icons";
@@ -9,10 +9,12 @@ const TABS = [
   { href: "/admin/settings/site", label: "سایت", icon: Icon.Folder },
   { href: "/admin/settings/branding", label: "برند و ظاهر", icon: Icon.Palette },
   { href: "/admin/settings/landing", label: "صفحه فرود", icon: Icon.Media },
+  { href: "/admin/settings/coaching", label: "کوچینگ", icon: Icon.Media },
   { href: "/admin/settings/payment", label: "پرداخت", icon: Icon.Money },
   { href: "/admin/settings/sms", label: "پیامک", icon: Icon.Sms },
   { href: "/admin/settings/email", label: "ایمیل", icon: Icon.Mail },
   { href: "/admin/settings/chat", label: "چت زنده", icon: Icon.Bell },
+  { href: "/admin/settings/spotplayer", label: "اسپات‌پلیر", icon: Icon.Media },
 ];
 
 export default function SettingsTabs() {

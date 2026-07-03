@@ -1,127 +1,20 @@
 "use client";
 
-import Link from "next/link";
-
-const HEADER = { top: 0, left: 0, w: 1920, h: 120 };
-
-type NavItem = { href: string; label: string; gold?: boolean };
-
-const NAV: NavItem[] = [
-  { href: "/", label: "خانه" },
-  { href: "/about", label: "درباره ما" },
-  { href: "/courses", label: "دوره‌ها" },
-  { href: "/articles", label: "مقالات" },
-  { href: "/contact", label: "تماس با ما" },
-  { href: "/coaching", label: "نامدار گلد", gold: true },
-];
+import Link from "@/components/SafeLink";
 
 const PILLS: { label: string; x: number; w: number }[] = [
   { label: "تکنیکال", x: 1255, w: 126 },
   { label: "فاندامنتال", x: 1123, w: 126 },
   { label: "طلا", x: 1048, w: 70 },
   { label: "دلار", x: 973, w: 70 },
-  { label: "موضوعات روانشناسی معاملات", x: 707, w: 260 },
+  { label: "موضوعات روان‌شناسی معاملات", x: 707, w: 260 },
   { label: "فاندامنتال", x: 575, w: 126 },
 ];
 
 export default function LandingNavOverlay() {
   return (
     <>
-      <div
-        className="absolute"
-        style={{
-          top: HEADER.top,
-          left: HEADER.left,
-          width: HEADER.w,
-          height: HEADER.h,
-          background: "transparent",
-        }}
-      >
-        {/* Transparent clickable zone over Figma's static brand logo + text */}
-        <Link
-          href="/"
-          aria-label="خانه — نامدار آکادمی"
-          className="absolute block"
-          style={{ right: 80, top: 38, width: 280, height: 59 }}
-        />
-
-
-        {/* Center: separate rounded pill buttons */}
-        <nav
-          className="absolute flex items-center gap-4"
-          style={{
-            left: "50%",
-            top: 35,
-            transform: "translateX(-50%)",
-            height: 54,
-          }}
-        >
-          {NAV.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="relative group inline-flex items-center justify-center h-[54px] px-7 rounded-full text-[17px] font-medium text-white whitespace-nowrap transition-all duration-200 hover:-translate-y-0.5"
-              style={
-                l.gold
-                  ? {
-                      background:
-                        "linear-gradient(180deg, #324a82 0%, #1b2f5e 100%)",
-                      border: "2px solid #f7cf5a",
-                      boxShadow:
-                        "0 10px 22px -10px rgba(247,207,90,0.45), inset 0 1px 0 rgba(255,255,255,0.14)",
-                      color: "#f7cf5a",
-                    }
-                  : {
-                      background:
-                        "linear-gradient(180deg, #3a5dab 0%, #1a2a4f 100%)",
-                      boxShadow:
-                        "0 10px 22px -10px rgba(27,60,138,0.45), inset 0 1px 0 rgba(255,255,255,0.18)",
-                    }
-              }
-            >
-              <span
-                className="absolute inset-x-3 top-[2px] h-[1px] rounded-full pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
-                }}
-              />
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Left: auth CTA */}
-        <div
-          className="absolute flex items-center"
-          style={{ left: 80, top: 35, height: 54 }}
-        >
-          <Link
-            href="/login"
-            className="group inline-flex items-center gap-2 h-[54px] px-7 rounded-full text-[17px] font-medium text-white whitespace-nowrap transition-all duration-200 hover:-translate-y-0.5"
-            style={{
-              background:
-                "linear-gradient(135deg, #136cb5 0%, #1b3c8a 45%, #49bbbd 100%)",
-              boxShadow:
-                "0 12px 26px -10px rgba(19,108,181,0.55), inset 0 1px 0 rgba(255,255,255,0.22)",
-            }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              className="transition-transform group-hover:scale-110"
-            >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span>ورود / ثبت نام</span>
-          </Link>
-        </div>
-      </div>
+      {/* nav header removed — SiteHeader (in (site) layout) provides global nav for all routes */}
 
       {/* Hero value-prop — right column, aligned with instructor's head on the left.
        * Hero portrait frame spans y=122→1053; head sits around y=300–360.
@@ -309,7 +202,8 @@ export default function LandingNavOverlay() {
             کوچینگ حضوری ترید MON
           </Link>
           <Link
-            href="/courses?q=%D8%B3%D8%B1%D9%85%D8%A7%DB%8C%D9%87%E2%80%8C%DA%AF%D8%B0%D8%A7%D8%B1%DB%8C"
+            href="/investing"
+            aria-label="سرمایه‌گذاری کریپتو و طلا — اینوستینگ هاب"
             className="inline-flex items-center justify-start gap-3 h-[64px] pr-6 pl-7 rounded-full text-[15px] font-bold whitespace-nowrap text-[#06142f] transition-all duration-200 hover:-translate-y-0.5"
             style={{
               width: 340,

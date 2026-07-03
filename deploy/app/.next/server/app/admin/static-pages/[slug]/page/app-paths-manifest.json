@@ -1,0 +1,3 @@
+{
+  "/admin/static-pages/[slug]/page": "app/admin/static-pages/[slug]/page.js"
+}

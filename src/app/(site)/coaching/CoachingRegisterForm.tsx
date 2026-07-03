@@ -41,7 +41,9 @@ export default function CoachingRegisterForm() {
           phone: form.phone,
           email: form.email,
           subject: "ثبت‌نام در کوچینگ MON",
-          message: `سطح: ${form.experience}\n\n${form.message}`,
+          message: `سطح فعلی: ${form.experience}${form.message ? `\n\n${form.message}` : ""}`,
+          relatedCourseSlug: "mon",
+          source: "coaching-register-form",
         }),
       });
       if (res.ok) {

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <title>بدون اتصال — نامدار آکادمی</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#1b3c8a" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; height: 100%; }
+      body {
+        font-family: Tahoma, Arial, sans-serif;
+        background: radial-gradient(circle at 30% 20%, #eaf3ff 0%, transparent 60%),
+                    radial-gradient(circle at 80% 80%, #d6efef 0%, transparent 60%),
+                    #f5f8fd;
+        color: #0e1a3d;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .card {
+        max-width: 440px;
+        text-align: center;
+        background: rgba(255,255,255,0.75);
+        backdrop-filter: blur(16px) saturate(1.4);
+        -webkit-backdrop-filter: blur(16px) saturate(1.4);
+        border: 1px solid rgba(255,255,255,0.6);
+        border-radius: 24px;
+        padding: 32px 28px;
+        box-shadow: 0 28px 60px -18px rgba(14,26,61,0.22);
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #f7cf5a;
+        box-shadow: 0 0 16px #f7cf5a;
+        display: inline-block;
+        margin-bottom: 18px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 10px 0;
+        color: #0e1a3d;
+      }
+      p {
+        margin: 0 0 18px 0;
+        line-height: 1.9;
+        color: #3c4664;
+        font-size: 14.5px;
+      }
+      button {
+        background: linear-gradient(180deg, #2c70d8 0%, #154eb0 100%);
+        color: #fff;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 28px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 14px 28px -8px rgba(20,70,180,0.5);
+      }
+      button:hover { filter: brightness(1.05); }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <span class="dot" aria-hidden="true"></span>
+      <h1>اتصال اینترنت در دسترس نیست</h1>
+      <p>
+        برای مشاهده محتوای نامدار آکادمی نیاز به اتصال اینترنت داری. وقتی
+        آنلاین شدی، دوباره امتحان کن.
+      </p>
+      <button onclick="location.reload()">تلاش مجدد</button>
+    </div>
+  </body>
+</html>

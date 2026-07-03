@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import {
   getCourse,
   getUser,
@@ -39,6 +39,7 @@ export default async function CourseStudentsPage({
       completedLessons: completed,
       totalLessons: lessons.length,
       lastActivityAt: last?.lastWatchedAt ?? null,
+      expiresAt: e.expiresAt ?? null,
     };
   });
 

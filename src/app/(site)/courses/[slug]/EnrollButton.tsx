@@ -53,13 +53,17 @@ export default function EnrollButton({ course }: { course: CourseRecord }) {
     });
   }
 
+  // `relative isolate z-30` keeps the button stack above any sibling decorative
+  // blobs/blur layers in the surrounding pricing card. Without this, third-party
+  // chat-widget overlays (Goftino welcome bubble) could intercept taps on mobile.
   return (
-    <div className="space-y-3">
+    <div className="relative isolate z-30 space-y-3" style={{ pointerEvents: "auto" }}>
       <button
         type="button"
         onClick={buyNow}
         disabled={loading}
-        className="w-full py-4 rounded-full bg-gradient-to-l from-[#136cb5] to-[#49bbbd] text-white font-bold text-lg shadow-lg shadow-[#136cb5]/25 hover:opacity-90 transition disabled:opacity-60 disabled:cursor-wait"
+        className="relative z-10 w-full py-4 rounded-full bg-gradient-to-l from-[#136cb5] to-[#49bbbd] text-white font-bold text-lg shadow-lg shadow-[#136cb5]/25 hover:opacity-90 transition disabled:opacity-60 disabled:cursor-wait"
+        style={{ pointerEvents: "auto", touchAction: "manipulation" }}
       >
         {loading ? "در حال انتقال..." : "خرید مستقیم"}
       </button>
@@ -68,7 +72,8 @@ export default function EnrollButton({ course }: { course: CourseRecord }) {
         <button
           type="button"
           onClick={() => router.push("/cart")}
-          className="w-full py-3 rounded-full border-2 border-[#1b3c8a] text-[#1b3c8a] font-bold text-base hover:bg-[#eef4ff] transition inline-flex items-center justify-center gap-2"
+          className="relative z-10 w-full py-3 rounded-full border-2 border-[#1b3c8a] text-[#1b3c8a] font-bold text-base hover:bg-[#eef4ff] transition inline-flex items-center justify-center gap-2"
+          style={{ pointerEvents: "auto", touchAction: "manipulation" }}
         >
           <span>✓</span> در سبد خرید — مشاهده سبد
         </button>
@@ -76,7 +81,8 @@ export default function EnrollButton({ course }: { course: CourseRecord }) {
         <button
           type="button"
           onClick={addToCart}
-          className="w-full py-3 rounded-full border-2 border-[#1b3c8a] text-[#1b3c8a] font-bold text-base hover:bg-[#eef4ff] transition inline-flex items-center justify-center gap-2"
+          className="relative z-10 w-full py-3 rounded-full border-2 border-[#1b3c8a] text-[#1b3c8a] font-bold text-base hover:bg-[#eef4ff] transition inline-flex items-center justify-center gap-2"
+          style={{ pointerEvents: "auto", touchAction: "manipulation" }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="9" cy="21" r="1" />

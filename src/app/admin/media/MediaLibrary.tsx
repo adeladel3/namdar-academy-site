@@ -12,6 +12,8 @@ import {
   useConfirm,
 } from "@/components/admin/ui";
 import { Icon } from "@/components/admin/Icons";
+import { uploadErrorMessage } from "@/components/admin/uploadError";
+import { UploadImg } from "@/components/UploadImg";
 import { faDigits, formatDate } from "@/lib/formatting";
 import type { MediaAsset } from "@/lib/db";
 
@@ -27,6 +29,9 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
   async function upload(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    let okCount = 0;
+    let failCount = 0;
+    const newItems: MediaAsset[] = [];
     try {
       for (const file of Array.from(files)) {
         const fd = new FormData();
@@ -36,12 +41,29 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
           body: fd,
         });
         if (!res.ok) {
-          const d = await res.json().catch(() => ({}));
-          toast(d.error ?? "بارگذاری ناموفق", "err");
+          toast(await uploadErrorMessage(res, file), "err");
+          failCount++;
           continue;
         }
+        try {
+          const body = await res.json();
+          if (body && body.id && body.url) {
+            newItems.push(body as MediaAsset);
+          }
+        } catch {
+          // ignore — refresh will still pick it up
+        }
+        okCount++;
       }
-      toast("بارگذاری انجام شد", "ok");
+      if (newItems.length > 0) {
+        setItems((prev) => [...newItems.reverse(), ...prev]);
+      }
+      if (okCount > 0 && failCount === 0) toast("بارگذاری انجام شد", "ok");
+      else if (okCount > 0 && failCount > 0)
+        toast(
+          `${faDigits(okCount)} فایل آپلود شد، ${faDigits(failCount)} ناموفق`,
+          "info"
+        );
       router.refresh();
     } finally {
       setUploading(false);
@@ -137,9 +159,8 @@ export default function MediaLibrary({ initial }: { initial: MediaAsset[] }) {
                 )}
               >
                 {m.kind === "image" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={m.url}
+                  <UploadImg
+                    url={m.url}
                     alt={m.fileName}
                     className="w-full h-32 object-cover"
                   />

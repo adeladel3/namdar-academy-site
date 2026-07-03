@@ -51,21 +51,31 @@ export async function POST(req: Request) {
       : existing?.positionSec ?? 0;
   const delta = Math.max(0, body.deltaSec ?? 0);
 
+  // Gate "completed" server-side: only accept true on an actual video "end"
+  // event where the reported position is within 5s of the known duration, or
+  // from admins. Once true, stays true. This stops clients from flipping the
+  // flag by POSTing { completed: true } to skip the 100%-watch gate.
+  const maxPos = Math.max(position, existing?.maxPositionSec ?? 0);
+  const durationSec = lesson.videoDurationSec ?? 0;
+  let completed = existing?.completed ?? false;
+  if (!completed && body.completed === true) {
+    const reachedEnd =
+      durationSec > 0 && body.event === "end" && position >= durationSec - 5;
+    if (session.role === "admin" || reachedEnd) completed = true;
+  }
+
   upsertProgress({
     userId: session.userId,
     lessonId,
     courseSlug: lesson.courseSlug,
     positionSec: position,
-    maxPositionSec: Math.max(position, existing?.maxPositionSec ?? 0),
+    maxPositionSec: maxPos,
     watchedSec: (existing?.watchedSec ?? 0) + delta,
     watchCount:
       body.event === "play"
         ? (existing?.watchCount ?? 0) + 1
         : existing?.watchCount ?? (existing ? 0 : 1),
-    completed:
-      typeof body.completed === "boolean"
-        ? body.completed
-        : existing?.completed ?? false,
+    completed,
     firstWatchedAt: existing?.firstWatchedAt ?? now,
     lastWatchedAt: now,
   });

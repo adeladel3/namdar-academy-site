@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { useMemo, useRef, useState } from "react";
 import type { CourseLevelKey, CourseStatus } from "@/lib/db";
+import { courseDetailHref } from "@/lib/course-links";
 import {
   LEVEL_LABELS,
   faDigits,
@@ -21,12 +22,22 @@ export type CourseCardData = {
   isFree: boolean;
   instructor: string;
   studentsCount: number;
+  hideStudentsCount?: boolean;
   badge?: string;
   status: CourseStatus;
   createdAt: number;
   publishedAt?: number;
   duration: string;
   lessons: number;
+  /** نوع محصول. پیش‌فرض «course». با «seminar» کارت به صفحه‌ی سمینار لینک
+   *  می‌شود، نشان «سمینار حضوری» می‌گیرد و عبارت دکمه و مکان رویداد تغییر
+   *  می‌کند. */
+  kind?: "course" | "seminar";
+  /** مقصد پیش‌فرض کلیک روی کارت. اگر تعیین نشود، از courseDetailHref استفاده
+   *  می‌شود. برای سمینارها مسیر «/seminars/<slug>» را پاس می‌کنیم. */
+  detailHref?: string;
+  /** برای سمینارها: نام محل برگزاری (روی کارت چاپ می‌شود). */
+  venueName?: string;
 };
 
 type LevelKey = "all" | "beginner" | "intermediate" | "advanced";
@@ -57,6 +68,18 @@ function effectivePrice(c: CourseCardData) {
   return c.discountPrice ?? c.price;
 }
 
+/** Resolve the target link for a card — seminars carry their own
+ *  `detailHref` (/seminars/<slug>) while regular courses fall back to the
+ *  shared courseDetailHref helper. */
+function cardHref(c: CourseCardData): string {
+  if (c.detailHref) return c.detailHref;
+  return courseDetailHref(c.slug);
+}
+
+function isSeminar(c: CourseCardData): boolean {
+  return c.kind === "seminar";
+}
+
 function discountPercent(c: CourseCardData) {
   if (!c.discountPrice || c.discountPrice >= c.price) return 0;
   return Math.round(((c.price - c.discountPrice) / c.price) * 100);
@@ -66,6 +89,84 @@ function discountPercent(c: CourseCardData) {
 function fakeRating(c: CourseCardData) {
   const base = 4.4 + ((c.studentsCount % 55) / 100);
   return Math.min(4.95, Math.round(base * 10) / 10);
+}
+
+// Per-course brand logos. Mirrors the hidden brand-circles block in Landing.tsx
+// so the look stays in sync. MON and FINVEST source PNGs have non-square
+// framing and need a custom crop to sit nicely inside a circular wrapper.
+type BrandLogo = {
+  src: string;
+  glow: string;          // radial-gradient backdrop
+  bg: string;            // circle tile background
+  // absolute-positioned img style — matches the Landing hero crops.
+  imgStyle: React.CSSProperties;
+};
+
+const BRAND_LOGOS: Record<string, BrandLogo> = {
+  mon: {
+    src: "/figma/image1.png",
+    glow: "radial-gradient(circle, rgba(255,176,75,0.55) 0%, rgba(255,176,75,0) 70%)",
+    bg: "radial-gradient(circle at 30% 30%, rgba(255,220,160,0.25), rgba(35,20,10,0.9) 70%)",
+    // MON PNG includes "STUDENT REVIEWS" text below the sphere; render taller
+    // than the circular wrapper and rely on overflow-hidden to clip the text.
+    imgStyle: { left: "0%", top: "0%", width: "100%", height: "146%", objectFit: "cover" as const, maxWidth: "none" },
+  },
+  nova: {
+    src: "/figma/untitled1copy1.png",
+    glow: "radial-gradient(circle, rgba(66,71,186,0.55) 0%, rgba(66,71,186,0) 70%)",
+    bg: "radial-gradient(circle at 30% 30%, rgba(160,170,230,0.25), rgba(20,24,55,0.9) 70%)",
+    imgStyle: { inset: 0, width: "100%", height: "100%", objectFit: "contain" as const, padding: "6%" },
+  },
+  lq1: {
+    src: "/figma/layer11.png",
+    glow: "radial-gradient(circle, rgba(12,156,75,0.55) 0%, rgba(12,156,75,0) 70%)",
+    bg: "radial-gradient(circle at 30% 30%, rgba(120,220,170,0.2), rgba(8,38,22,0.9) 70%)",
+    imgStyle: { inset: 0, width: "100%", height: "100%", objectFit: "contain" as const, padding: "4%" },
+  },
+  finvest: {
+    src: "/figma/finvestcopy1.png",
+    glow: "radial-gradient(circle, rgba(18,18,18,0.45) 0%, rgba(18,18,18,0) 70%)",
+    bg: "radial-gradient(circle at 30% 30%, rgba(150,150,150,0.12), rgba(10,10,12,0.95) 70%)",
+    // FINVEST source is a landscape PNG whose actual circular mark sits on its
+    // left ~40%. Scale to ~262% width, nudge the crop so the mark is centered.
+    imgStyle: { left: "-38%", top: "-16%", width: "262%", height: "131%", maxWidth: "none" },
+  },
+};
+
+function getBrandLogo(slug: string): BrandLogo | null {
+  return BRAND_LOGOS[slug] ?? null;
+}
+
+/** Circular brand-logo tile — used inside both the featured hero and the
+ * regular grid card. `size` is a responsive class-string for the wrapper's
+ * width/height (the tile is always a square circle). */
+function BrandLogoTile({ slug, size }: { slug: string; size: string }) {
+  const logo = getBrandLogo(slug);
+  if (!logo) return null;
+  return (
+    <div className={`relative ${size}`}>
+      {/* Soft brand halo behind the circle */}
+      <div
+        aria-hidden
+        className="absolute -inset-6 rounded-full blur-2xl pointer-events-none"
+        style={{ background: logo.glow }}
+      />
+      <div
+        className="relative h-full w-full rounded-full overflow-hidden ring-1 ring-white/70 shadow-[0_18px_48px_-14px_rgba(14,26,61,0.45)]"
+        style={{ background: logo.bg }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt=""
+          aria-hidden
+          draggable={false}
+          src={logo.src}
+          className="absolute pointer-events-none select-none"
+          style={logo.imgStyle}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default function CoursesGrid({
@@ -135,24 +236,30 @@ export default function CoursesGrid({
   return (
     <div className="bg-[#f4f7fc] min-h-screen" dir="rtl">
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-[#050924] text-white">
-        {/* Layered glow */}
-        <div className="pointer-events-none absolute -top-32 -right-20 h-[420px] w-[420px] rounded-full bg-[#136cb5] opacity-30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-40 -left-24 h-[460px] w-[460px] rounded-full bg-[#49bbbd] opacity-25 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/3 left-1/2 h-[280px] w-[280px] rounded-full bg-amber-500 opacity-[0.08] blur-3xl" />
+      <section
+        className="relative overflow-hidden text-white"
+        style={{
+          background:
+            "linear-gradient(to left, #0f1f4a 0%, #1b3c8a 50%, #136cb5 100%)",
+        }}
+      >
+        {/* Soft accent glows tuned for the brighter navy gradient */}
+        <div className="pointer-events-none absolute -top-32 -right-24 h-[460px] w-[460px] rounded-full bg-[#49bbbd] opacity-25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 -left-24 h-[480px] w-[480px] rounded-full bg-[#0f1f4a] opacity-40 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/3 left-1/2 h-[320px] w-[320px] rounded-full bg-[#f7cf5a] opacity-[0.10] blur-3xl" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_70%)]" />
 
-        <div className="relative max-w-[1280px] mx-auto px-4 md:px-8 pt-16 pb-32 md:pt-24 md:pb-40">
+        <div className="relative max-w-[1280px] mx-auto px-4 md:px-8 pt-8 pb-20 md:pt-12 md:pb-28">
           <div className="flex flex-col items-center text-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs md:text-sm text-white/80 backdrop-blur">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inset-0 rounded-full bg-[#49bbbd] opacity-75" />
                 <span className="relative rounded-full h-2 w-2 bg-[#49bbbd]" />
               </span>
-              کتابخانه آموزشی نامدار آکادمی
+              آموزشی نامدار آکادمی
             </span>
 
-            <h1 className="mt-7 text-[40px] md:text-[72px] font-black tracking-tight leading-[1.05]">
+            <h1 className="mt-5 text-[34px] md:text-[60px] font-black tracking-tight leading-[1.05]">
               <span className="block">از اولین کندل</span>
               <span className="block">
                 تا{" "}
@@ -177,14 +284,14 @@ export default function CoursesGrid({
                 </span>
               </span>
             </h1>
-            <p className="mt-7 max-w-2xl text-base md:text-lg text-white/70 leading-relaxed">
+            <p className="mt-4 max-w-2xl text-sm md:text-base text-white/70 leading-relaxed">
               مسیری ساختاریافته که با متدولوژی اختصاصی استاد نام‌آور و هزاران
               ساعت تجربه میدانی طراحی شده. هر دوره، یک قدم جدی به سمت حرفه‌ای
               شدن.
             </p>
 
             {/* Stats */}
-            <div className="mt-12 grid grid-cols-3 gap-3 md:gap-5 w-full max-w-3xl">
+            <div className="mt-7 grid grid-cols-3 gap-3 md:gap-5 w-full max-w-3xl">
               {[
                 { value: `+${faDigits(stats.courses)}`, label: "دوره تخصصی", icon: "book" },
                 {
@@ -200,7 +307,7 @@ export default function CoursesGrid({
               ].map((s, i) => (
                 <div
                   key={i}
-                  className="group rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur px-3 py-5 md:px-6 md:py-6 hover:border-[#49bbbd]/40 transition"
+                  className="group rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur px-3 py-3.5 md:px-6 md:py-4 hover:border-[#49bbbd]/40 transition"
                 >
                   <div className="flex items-center justify-center mb-2 text-[#49bbbd]">
                     {s.icon === "book" && (
@@ -221,7 +328,7 @@ export default function CoursesGrid({
                       </svg>
                     )}
                   </div>
-                  <div className="text-2xl md:text-4xl font-black text-white tracking-tight">
+                  <div className="text-xl md:text-3xl font-black text-white tracking-tight">
                     {s.value}
                   </div>
                   <div className="mt-1 text-xs md:text-sm text-white/55">
@@ -402,7 +509,7 @@ export default function CoursesGrid({
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-7">
                   {rest.map((c) => (
-                    <CourseCard key={c.slug} course={c} />
+                    <CourseCard key={`${c.kind ?? "course"}:${c.slug}`} course={c} />
                   ))}
                 </div>
               </>
@@ -419,53 +526,122 @@ export default function CoursesGrid({
 function FeaturedCard({ course }: { course: CourseCardData }) {
   const discount = discountPercent(course);
   const rating = fakeRating(course);
+  const seminar = isSeminar(course);
   return (
     <Link
-      href={`/courses/${course.slug}`}
-      className="group relative block overflow-hidden rounded-[2rem] bg-[#050924] text-white shadow-[0_40px_100px_-30px_rgba(5,9,36,0.5)] ring-1 ring-white/5 hover:shadow-[0_60px_140px_-30px_rgba(5,9,36,0.7)] transition-all duration-500"
+      href={cardHref(course)}
+      className="group relative block overflow-hidden rounded-[2rem] text-[#0e1a3d] transition-all duration-500"
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.55) 45%, rgba(229,234,245,0.7) 100%)",
+        backdropFilter: "blur(28px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(28px) saturate(1.6)",
+        border: "1px solid rgba(255,255,255,0.7)",
+        boxShadow:
+          "0 32px 80px -28px rgba(14,26,61,0.25), 0 1px 0 rgba(255,255,255,0.9) inset",
+      }}
     >
-      {/* Animated gradient border glow on hover */}
-      <div className="pointer-events-none absolute -inset-px rounded-[2rem] bg-gradient-to-r from-[#49bbbd]/0 via-[#49bbbd]/40 to-[#136cb5]/0 opacity-0 group-hover:opacity-100 blur-lg transition-opacity duration-500" />
+      {/* Glass sheen at top */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-0 left-0 right-0 h-[40%] z-[1]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.55), transparent)",
+          mixBlendMode: "overlay",
+        }}
+      />
 
-      <div className="relative grid md:grid-cols-5 gap-0">
-        {/* Image */}
-        <div className="relative md:col-span-2 aspect-[16/10] md:aspect-auto md:min-h-[420px] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={course.previewImage}
-            alt=""
-            aria-hidden
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+      {/* Iridescent pastel hover glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-px rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl"
+        style={{
+          background:
+            "conic-gradient(from 120deg, rgba(247,207,90,0.24), rgba(73,187,189,0.28), rgba(165,52,225,0.2), rgba(27,60,138,0.22), rgba(247,207,90,0.24))",
+        }}
+      />
+
+      <div className="relative grid md:grid-cols-5 gap-0 z-[2]">
+        {/* Image — swapped for per-brand circular logo when the course matches
+            a known brand (MON / NOVA / LQ1 / FINVEST). Falls back to the
+            generic preview image for anything else. */}
+        <div className="relative md:col-span-2 aspect-[16/10] md:aspect-auto md:min-h-[420px] overflow-hidden bg-gradient-to-br from-[#eef2fb] to-[#dbe3f2] flex items-center justify-center">
+          {getBrandLogo(course.slug) ? (
+            <BrandLogoTile
+              slug={course.slug}
+              size="w-[220px] h-[220px] md:w-[280px] md:h-[280px] group-hover:scale-[1.04] transition duration-[600ms]"
+            />
+          ) : (
+            <>
+              {/* وقتی previewImage خالی باشد (مثل سمیناری که هنوز heroImage
+                  آپلود نشده) اصلاً <img> رندر نمی‌کنیم تا browser warning ندهد. */}
+              {course.previewImage && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={course.previewImage}
+                  alt=""
+                  aria-hidden
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                  }}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition duration-[700ms] ease-out"
+                />
+              )}
+              {/* Play badge — only for on-demand courses. Seminars get a
+                  ticket icon instead, since they aren't videos. */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative h-20 w-20 rounded-full bg-white/75 backdrop-blur-md ring-1 ring-white/85 flex items-center justify-center group-hover:scale-110 transition duration-500 shadow-[0_14px_36px_-8px_rgba(14,26,61,0.35)]">
+                  <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />
+                  {seminar ? (
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#0e1a3d"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="relative"
+                    >
+                      <path d="M3 9a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a2 2 0 000-4z" />
+                      <path d="M9 7v10" strokeDasharray="2 3" />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="26"
+                      height="26"
+                      viewBox="0 0 24 24"
+                      fill="#0e1a3d"
+                      className="relative -translate-x-0.5"
+                    >
+                      <path d="M6 4l14 8-14 8V4z" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Soft veil into the glass body */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, transparent 35%, rgba(255,255,255,0.2) 100%)",
             }}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition duration-[700ms] ease-out"
           />
-          {/* Cinematic overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#050924]/40 via-transparent to-[#050924]/50" />
-          <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-l from-[#050924] via-[#050924]/20 to-transparent" />
-
-          {/* Play badge */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative h-20 w-20 rounded-full bg-white/10 backdrop-blur-md ring-1 ring-white/30 flex items-center justify-center group-hover:scale-110 transition duration-500">
-              <div className="absolute inset-0 rounded-full bg-white/5 animate-pulse" />
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="white" className="relative -translate-x-0.5">
-                <path d="M6 4l14 8-14 8V4z" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Top-left tag */}
-          <div className="absolute top-5 right-5 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#49bbbd] text-[#050924] text-xs font-extrabold px-3 py-1.5 shadow-lg shadow-[#49bbbd]/30">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              دوره منتخب
-            </span>
-          </div>
+          <div
+            className="pointer-events-none absolute inset-0 hidden md:block"
+            style={{
+              background:
+                "linear-gradient(270deg, rgba(255,255,255,0.55), transparent 35%)",
+            }}
+          />
 
           {discount > 0 && (
-            <span className="absolute bottom-5 right-5 rounded-full bg-rose-500 text-white text-xs font-extrabold px-3 py-1.5 shadow-lg shadow-rose-500/40">
+            <span className="absolute bottom-5 right-5 rounded-full bg-rose-500/95 backdrop-blur text-white text-xs font-extrabold px-3 py-1.5 shadow-lg shadow-rose-500/40">
               {faDigits(discount)}٪ تخفیف
             </span>
           )}
@@ -475,71 +651,116 @@ function FeaturedCard({ course }: { course: CourseCardData }) {
         <div className="relative md:col-span-3 p-6 md:p-12 flex flex-col">
           {/* Meta row */}
           <div className="flex items-center gap-3 flex-wrap text-xs">
-            <span className={`inline-flex items-center gap-1.5 font-semibold ${LEVEL_ACCENTS[course.level].text}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${LEVEL_ACCENTS[course.level].dot}`} />
-              سطح {LEVEL_LABELS[course.level]}
-            </span>
-            <span className="h-3 w-px bg-white/15" />
+            {seminar ? (
+              <span className="inline-flex items-center gap-1.5 font-bold text-[#1b3c8a]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#f7cf5a]" />
+                سمینار حضوری
+              </span>
+            ) : (
+              <span
+                className={`inline-flex items-center gap-1.5 font-bold ${LEVEL_ACCENTS_LIGHT[course.level].text}`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${LEVEL_ACCENTS_LIGHT[course.level].dot}`}
+                />
+                سطح {LEVEL_LABELS[course.level]}
+              </span>
+            )}
+            <span className="h-3 w-px bg-[#0e1a3d]/15" />
             {course.duration && (
               <>
-                <span className="text-white/60">مدت: {course.duration}</span>
-                <span className="h-3 w-px bg-white/15" />
+                <span className="text-[#0e1a3d]/65 font-medium">
+                  {seminar ? course.duration : `مدت: ${course.duration}`}
+                </span>
+                <span className="h-3 w-px bg-[#0e1a3d]/15" />
               </>
             )}
-            {course.lessons > 0 && (
+            {seminar && course.venueName && (
               <>
-                <span className="text-white/60">{faDigits(course.lessons)} درس</span>
-                <span className="h-3 w-px bg-white/15" />
+                <span className="text-[#0e1a3d]/65 font-medium">
+                  📍 {course.venueName}
+                </span>
+                <span className="h-3 w-px bg-[#0e1a3d]/15" />
               </>
             )}
-            <span className="inline-flex items-center gap-1 text-amber-300">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              <span className="font-semibold">{faDigits(rating.toFixed(1))}</span>
-            </span>
+            {!seminar && course.lessons > 0 && (
+              <>
+                <span className="text-[#0e1a3d]/65 font-medium">
+                  {faDigits(course.lessons)} درس
+                </span>
+                <span className="h-3 w-px bg-[#0e1a3d]/15" />
+              </>
+            )}
+            {!seminar && (
+              <span className="inline-flex items-center gap-1 text-amber-600">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <span className="font-bold">{faDigits(rating.toFixed(1))}</span>
+              </span>
+            )}
           </div>
 
-          <h2 className="mt-5 text-3xl md:text-5xl font-black leading-[1.05] tracking-tight">
+          <h2 className="mt-5 text-3xl md:text-5xl font-black leading-[1.05] tracking-tight text-[#0e1a3d]">
             {course.title}
           </h2>
-          <p className="mt-4 text-white/65 leading-relaxed line-clamp-3 max-w-xl">
+          <p className="mt-4 text-[#0e1a3d]/65 leading-relaxed line-clamp-3 max-w-xl">
             {course.shortDesc}
           </p>
 
           {/* Instructor */}
           <div className="mt-6 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-[#1b3c8a] to-[#49bbbd] text-white font-black text-sm ring-2 ring-white/10">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-[#1b3c8a] to-[#49bbbd] text-white font-black text-sm ring-2 ring-white shadow-sm">
               {course.instructor?.trim()?.[0] ?? "ن"}
             </div>
             <div>
-              <div className="text-[11px] text-white/45">مدرس</div>
-              <div className="text-sm font-bold">{course.instructor}</div>
+              <div className="text-[11px] text-[#0e1a3d]/50 font-medium">مدرس</div>
+              <div className="text-sm font-bold text-[#0e1a3d]">{course.instructor}</div>
             </div>
           </div>
 
           <div className="mt-auto pt-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
               {course.isFree ? (
-                <div className="text-3xl font-black text-emerald-400">رایگان</div>
+                <div className="text-3xl font-black text-emerald-600">رایگان</div>
               ) : (
                 <>
                   {course.discountPrice && course.discountPrice < course.price && (
-                    <div className="text-sm text-white/40 line-through">
+                    <div className="text-sm text-[#0e1a3d]/40 line-through">
                       {formatToman(course.price)}
                     </div>
                   )}
-                  <div className="text-3xl font-black text-white">
+                  <div className="text-3xl font-black text-[#0e1a3d]">
                     {formatToman(course.discountPrice ?? course.price)}
                   </div>
                 </>
               )}
             </div>
 
-            <span className="inline-flex items-center gap-2 rounded-full bg-white text-[#050924] text-sm font-extrabold px-7 py-3.5 group-hover:bg-[#49bbbd] transition duration-300">
-              ورود به دوره
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="transition-transform group-hover:-translate-x-1">
-                <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <span
+              className="group/cta inline-flex items-center gap-2 rounded-full text-[#2d1c03] text-sm font-extrabold px-7 py-3.5 transition duration-400 ring-1 ring-[#f7cf5a]/50"
+              style={{
+                background:
+                  "linear-gradient(100deg, #fff4d6 0%, #f7cf5a 40%, #d4a62a 100%)",
+                boxShadow:
+                  "0 14px 36px -10px rgba(247,207,90,0.55), inset 0 1px 0 rgba(255,255,255,0.5)",
+              }}
+            >
+              {seminar ? "رزرو صندلی" : "ورود به دوره"}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="transition-transform group-hover:-translate-x-1"
+              >
+                <path
+                  d="M19 12H5M12 19l-7-7 7-7"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
           </div>
@@ -551,20 +772,30 @@ function FeaturedCard({ course }: { course: CourseCardData }) {
 
 /* ============================ Card ============================ */
 
+/** Light-tone level palette for glass cards */
+const LEVEL_ACCENTS_LIGHT: Record<
+  CourseLevelKey,
+  { dot: string; text: string; ring: string }
+> = {
+  beginner: { dot: "bg-emerald-500", text: "text-emerald-700", ring: "ring-emerald-400/40" },
+  intermediate: { dot: "bg-amber-500", text: "text-amber-700", ring: "ring-amber-400/40" },
+  advanced: { dot: "bg-rose-500", text: "text-rose-700", ring: "ring-rose-400/40" },
+};
+
 function CourseCard({ course }: { course: CourseCardData }) {
   const discount = discountPercent(course);
   const rating = fakeRating(course);
+  const seminar = isSeminar(course);
   const ref = useRef<HTMLAnchorElement>(null);
 
-  // 3D tilt effect on pointer move
   function handleMove(e: React.PointerEvent<HTMLAnchorElement>) {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width;
     const y = (e.clientY - r.top) / r.height;
-    const rotX = (0.5 - y) * 6;
-    const rotY = (x - 0.5) * 6;
+    const rotX = (0.5 - y) * 5;
+    const rotY = (x - 0.5) * 5;
     el.style.setProperty("--rx", `${rotX.toFixed(2)}deg`);
     el.style.setProperty("--ry", `${rotY.toFixed(2)}deg`);
   }
@@ -578,82 +809,166 @@ function CourseCard({ course }: { course: CourseCardData }) {
   return (
     <Link
       ref={ref}
-      href={`/courses/${course.slug}`}
+      href={cardHref(course)}
       onPointerMove={handleMove}
       onPointerLeave={handleLeave}
-      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] bg-[#050924] text-white ring-1 ring-white/5 shadow-[0_15px_40px_-20px_rgba(5,9,36,0.35)] hover:shadow-[0_40px_80px_-30px_rgba(5,9,36,0.55)] transition-all duration-500 [transform:perspective(1000px)_rotateX(var(--rx,0deg))_rotateY(var(--ry,0deg))] will-change-transform"
-      style={{ transformStyle: "preserve-3d" }}
+      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] text-[#0e1a3d] transition-all duration-500 [transform:perspective(1000px)_rotateX(var(--rx,0deg))_rotateY(var(--ry,0deg))] will-change-transform"
+      style={{
+        transformStyle: "preserve-3d",
+        background:
+          "linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.5) 45%, rgba(229,234,245,0.68) 100%)",
+        backdropFilter: "blur(24px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.6)",
+        border: "1px solid rgba(255,255,255,0.7)",
+        boxShadow:
+          "0 22px 55px -22px rgba(14,26,61,0.22), 0 1px 0 rgba(255,255,255,0.9) inset, 0 -1px 0 rgba(14,26,61,0.04) inset",
+      }}
     >
-      {/* Gradient border glow */}
-      <div className="pointer-events-none absolute -inset-px rounded-[1.75rem] bg-gradient-to-br from-[#49bbbd]/0 via-[#49bbbd]/30 to-[#136cb5]/0 opacity-0 group-hover:opacity-100 blur-xl transition duration-500" />
+      {/* Glass sheen at top (simulates light reflection) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-0 left-0 right-0 h-1/3 z-[1]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.55), transparent)",
+          mixBlendMode: "overlay",
+        }}
+      />
 
-      {/* Media */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-[#1b3c8a] to-[#49bbbd]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={course.previewImage}
-          alt=""
-          aria-hidden
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+      {/* Iridescent pastel glow on hover (easter-egg vibe) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-px rounded-[1.75rem] opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl"
+        style={{
+          background:
+            "conic-gradient(from 120deg, rgba(247,207,90,0.22), rgba(73,187,189,0.24), rgba(165,52,225,0.18), rgba(27,60,138,0.22), rgba(247,207,90,0.22))",
+        }}
+      />
+
+      {/* Media — circular brand logo when the course matches a known brand,
+          otherwise the generic previewImage cover. */}
+      <div className="relative aspect-[16/10] overflow-hidden bg-gradient-to-br from-[#eef2fb] to-[#d6dfee] flex items-center justify-center">
+        {getBrandLogo(course.slug) ? (
+          <BrandLogoTile
+            slug={course.slug}
+            size="w-[140px] h-[140px] group-hover:scale-[1.06] transition duration-[600ms]"
+          />
+        ) : (
+          <>
+            {course.previewImage && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={course.previewImage}
+                alt=""
+                aria-hidden
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                }}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.07] transition duration-[700ms] ease-out"
+              />
+            )}
+            {/* Play button — frosted glass, reveals on hover (generic only) */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-500">
+              <div className="relative h-14 w-14 rounded-full bg-white/70 backdrop-blur-md ring-1 ring-white/80 flex items-center justify-center scale-75 group-hover:scale-100 transition duration-500 shadow-[0_10px_30px_-8px_rgba(14,26,61,0.35)]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#0e1a3d" className="-translate-x-0.5">
+                  <path d="M6 4l14 8-14 8V4z" />
+                </svg>
+              </div>
+            </div>
+          </>
+        )}
+        {/* Light cinematic veil */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, transparent 40%, rgba(255,255,255,0.35) 100%)",
           }}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-[700ms] ease-out"
         />
-        {/* Cinematic gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050924] via-[#050924]/20 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(5,9,36,0.45)_100%)]" />
 
-        {/* Play button */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-500">
-          <div className="relative h-14 w-14 rounded-full bg-white/15 backdrop-blur-md ring-1 ring-white/40 flex items-center justify-center scale-75 group-hover:scale-100 transition duration-500">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" className="-translate-x-0.5">
-              <path d="M6 4l14 8-14 8V4z" />
-            </svg>
+        {/* Top-right chip — frosted glass. For seminars we replace the
+            level badge with a distinct "in-person seminar" tag. */}
+        {seminar ? (
+          <div className="absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 rounded-full bg-[#1b3c8a]/90 backdrop-blur-md px-3 py-1.5 text-[11px] font-bold ring-1 ring-white/40 text-white shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f7cf5a]" />
+            سمینار حضوری
           </div>
-        </div>
-
-        {/* Top-right level dot */}
-        <div className={`absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-md px-3 py-1.5 text-[11px] font-semibold ring-1 ${LEVEL_ACCENTS[course.level].ring}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${LEVEL_ACCENTS[course.level].dot}`} />
-          <span className={LEVEL_ACCENTS[course.level].text}>{LEVEL_LABELS[course.level]}</span>
-        </div>
+        ) : (
+          <div
+            className={`absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 rounded-full bg-white/70 backdrop-blur-md px-3 py-1.5 text-[11px] font-bold ring-1 ${LEVEL_ACCENTS_LIGHT[course.level].ring}`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${LEVEL_ACCENTS_LIGHT[course.level].dot}`}
+            />
+            <span className={LEVEL_ACCENTS_LIGHT[course.level].text}>
+              {LEVEL_LABELS[course.level]}
+            </span>
+          </div>
+        )}
 
         {/* Top-left badges */}
         <div className="absolute top-3.5 left-3.5 flex flex-col gap-1.5 items-start">
           {course.badge && (
-            <span className="rounded-full bg-white text-[#050924] text-[11px] font-extrabold px-2.5 py-1 shadow">
+            <span className="rounded-full bg-white/80 backdrop-blur-md text-[#0e1a3d] text-[11px] font-extrabold px-2.5 py-1 ring-1 ring-white/80 shadow-sm">
               {course.badge}
             </span>
           )}
           {discount > 0 && (
-            <span className="rounded-full bg-rose-500 text-white text-[11px] font-extrabold px-2.5 py-1 shadow">
+            <span className="rounded-full bg-rose-500/90 backdrop-blur text-white text-[11px] font-extrabold px-2.5 py-1 shadow-sm">
               {faDigits(discount)}٪ تخفیف
             </span>
           )}
         </div>
 
-        {/* Bottom info ribbon */}
-        <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-white text-[11px] font-medium">
-          <span className="inline-flex items-center gap-1 rounded-full bg-black/45 backdrop-blur px-2.5 py-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-300">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-            {faDigits(rating.toFixed(1))}
-          </span>
+        {/* Bottom info ribbon — frosted chips */}
+        <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-[#0e1a3d] text-[11px] font-medium">
+          {seminar && course.venueName ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/85 backdrop-blur-md px-2.5 py-1 ring-1 ring-white/80 max-w-[60%]">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="10" r="3" stroke="currentColor" strokeWidth="2" />
+              </svg>
+              <span className="font-bold truncate">{course.venueName}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/75 backdrop-blur-md px-2.5 py-1 ring-1 ring-white/80">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="text-amber-500"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              <span className="font-bold">{faDigits(rating.toFixed(1))}</span>
+            </span>
+          )}
           <div className="inline-flex items-center gap-1.5">
             {course.lessons > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/45 backdrop-blur px-2.5 py-1">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/75 backdrop-blur-md px-2.5 py-1 ring-1 ring-white/80">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 8.5v7M2 12h14M16 8.5l6 3.5-6 3.5v-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d="M22 8.5v7M2 12h14M16 8.5l6 3.5-6 3.5v-7z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 {faDigits(course.lessons)} درس
               </span>
             )}
             {course.duration && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-black/45 backdrop-blur px-2.5 py-1">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/75 backdrop-blur-md px-2.5 py-1 ring-1 ring-white/80">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                  <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M12 7v5l3 2"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
                 {course.duration}
               </span>
@@ -662,54 +977,75 @@ function CourseCard({ course }: { course: CourseCardData }) {
         </div>
       </div>
 
-      {/* Body */}
-      <div className="relative p-5 flex flex-col flex-1">
-        <h3 className="text-lg font-extrabold text-white line-clamp-1 group-hover:text-[#49bbbd] transition">
+      {/* Body — glass with navy text */}
+      <div className="relative p-5 flex flex-col flex-1 z-[2]">
+        <h3 className="text-lg font-extrabold text-[#0e1a3d] line-clamp-1 group-hover:text-[#1b3c8a] transition">
           {course.title}
         </h3>
-        <p className="mt-2 text-sm text-white/55 line-clamp-2 min-h-[2.5rem] leading-relaxed">
+        <p className="mt-2 text-sm text-[#0e1a3d]/60 line-clamp-2 min-h-[2.5rem] leading-relaxed">
           {course.shortDesc}
         </p>
 
         {/* Instructor + students */}
         <div className="mt-4 flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-[#1b3c8a] to-[#49bbbd] text-white font-bold text-[11px] ring-2 ring-white/10">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-[#1b3c8a] to-[#49bbbd] text-white font-bold text-[11px] ring-2 ring-white shadow-sm">
               {course.instructor?.trim()?.[0] ?? "ن"}
             </div>
-            <span className="text-xs text-white/60 truncate">
+            <span className="text-xs text-[#0e1a3d]/70 truncate font-medium">
               {course.instructor}
             </span>
           </div>
-          <span className="text-[11px] text-white/45 inline-flex items-center gap-1 shrink-0">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
-            </svg>
-            {faDigits(course.studentsCount)}
-          </span>
+          {!course.hideStudentsCount && (
+            <span className="text-[11px] text-[#0e1a3d]/50 inline-flex items-center gap-1 shrink-0 font-medium">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+              </svg>
+              {faDigits(course.studentsCount)}
+            </span>
+          )}
         </div>
 
-        <div className="mt-5 pt-4 border-t border-white/5 flex items-end justify-between">
+        <div className="mt-5 pt-4 border-t border-[#0e1a3d]/[0.08] flex items-end justify-between">
           <div>
             {course.isFree ? (
-              <div className="text-lg font-black text-emerald-400">رایگان</div>
+              <div className="text-lg font-black text-emerald-600">رایگان</div>
             ) : (
               <>
                 {course.discountPrice && course.discountPrice < course.price && (
-                  <div className="text-xs text-white/35 line-through leading-none">
+                  <div className="text-xs text-[#0e1a3d]/35 line-through leading-none">
                     {formatTomanCompact(course.price)}
                   </div>
                 )}
-                <div className="text-lg font-black text-white leading-tight">
+                <div className="text-lg font-black text-[#0e1a3d] leading-tight">
                   {formatToman(course.discountPrice ?? course.price)}
                 </div>
               </>
             )}
           </div>
-          <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/10 text-white group-hover:bg-[#49bbbd] group-hover:text-[#050924] transition duration-300">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="transition-transform group-hover:-translate-x-0.5">
-              <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <span
+            className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/80 backdrop-blur-md text-[#0e1a3d] ring-1 ring-white/90 group-hover:bg-gradient-to-br group-hover:from-[#f7cf5a] group-hover:to-[#d4a62a] group-hover:text-[#2d1c03] group-hover:ring-[#f7cf5a]/50 transition duration-400 shadow-sm"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="transition-transform group-hover:-translate-x-0.5"
+            >
+              <path
+                d="M19 12H5M12 19l-7-7 7-7"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </span>
         </div>

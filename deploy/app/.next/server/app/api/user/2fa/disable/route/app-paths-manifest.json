@@ -1,0 +1,3 @@
+{
+  "/api/user/2fa/disable/route": "app/api/user/2fa/disable/route.js"
+}

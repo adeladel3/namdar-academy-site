@@ -22,6 +22,7 @@
 
 # misc
 .DS_Store
+._*
 *.pem
 
 # debug
@@ -39,3 +40,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Legacy data import — contains production DB dumps, never commit
+/legacy-import/
+
+# Runtime DB + backups. These hold every user's phone, TOTP secret
+# (plaintext base32), and admin-saved credentials (Kavenegar API key, SEP
+# terminal password, SMTP password…). Committing even once means the repo
+# treats itself as compromised and every secret must be rotated.
+/data/
+*.db.json
+*.db.json.*.bak
+
+# Local uploads — user-generated media, not code.
+/public/uploads/

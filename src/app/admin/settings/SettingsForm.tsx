@@ -39,7 +39,7 @@ export default function SettingsForm({
     setBusy(true);
     try {
       const payload: Record<string, unknown> = {};
-      for (const f of fields) payload[f.key] = values[f.key];
+      for (const f of fields) payload[f.key] = values[f.key] ?? "";
       const res = await fetch(
         `/api/admin/settings/${encodeURIComponent(group)}`,
         {

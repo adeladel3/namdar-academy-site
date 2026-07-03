@@ -1,5 +1,6 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { notFound } from "next/navigation";
+import { getSession } from "@/lib/auth";
 import {
   getCourse,
   getUser,
@@ -38,6 +39,11 @@ export default async function UserProfilePage({
   const { id } = await params;
   const user = getUser(id);
   if (!user) notFound();
+
+  const session = await getSession();
+  const viewer = session ? getUser(session.userId) : null;
+  const viewerIsSuperAdmin = !!viewer?.isSuperAdmin;
+  const viewerIsAdmin = session?.role === "admin";
 
   const enrollments = listEnrollmentRecordsForUser(id);
   const progress = listProgressForUser(id);
@@ -97,7 +103,20 @@ export default async function UserProfilePage({
             </div>
           )}
         </div>
-        <UserProfileActions user={user} courses={allCourses} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={`/admin/users/${user.id}/permissions`}
+            className="text-xs px-3 py-2 rounded-full bg-[#eef4ff] text-[#1b3c8a] font-bold hover:bg-[#dfe7ff] transition"
+          >
+            مدیریت دسترسی‌ها
+          </Link>
+          <UserProfileActions
+            user={user}
+            courses={allCourses}
+            viewerIsSuperAdmin={viewerIsSuperAdmin}
+            viewerIsAdmin={viewerIsAdmin}
+          />
+        </div>
       </Card>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">

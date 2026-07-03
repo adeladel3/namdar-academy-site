@@ -1,15 +1,22 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "./Icons";
-import Sidebar from "./Sidebar";
+import Sidebar, { type SidebarSection } from "./Sidebar";
 import { Button, Dropdown, DropdownItem, cx } from "./ui";
 import type { Session } from "@/lib/auth";
 import { USER_ROLE_LABELS } from "@/lib/formatting";
+import BrandLogo from "@/components/BrandLogo";
 
-export default function Topbar({ session }: { session: Session }) {
+export default function Topbar({
+  session,
+  sections,
+}: {
+  session: Session;
+  sections: SidebarSection[];
+}) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -20,7 +27,11 @@ export default function Topbar({ session }: { session: Session }) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 bg-white border-b border-[#e5eaf5]">
+      <header className="sticky top-0 z-20 bg-white border-b border-[#e5eaf5] relative">
+        <span
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#d4a62a]/50 to-transparent pointer-events-none"
+        />
         <div className="flex items-center gap-3 px-4 md:px-6 h-16">
           <button
             type="button"
@@ -31,8 +42,10 @@ export default function Topbar({ session }: { session: Session }) {
             <Icon.Menu width={20} height={20} />
           </button>
 
-          <div className="text-sm text-[#010514]/55 hidden md:block">
-            پنل مدیریت نامدار آکادمی
+          <BrandLogo variant="dark" size="sm" href="/admin" />
+
+          <div className="hidden md:flex items-center gap-2 text-xs text-[#010514]/55 pr-3 mr-3 border-r border-[#e5eaf5]">
+            پنل مدیریت
           </div>
 
           <div className="flex-1" />
@@ -109,7 +122,10 @@ export default function Topbar({ session }: { session: Session }) {
             mobileOpen ? "translate-x-0" : "translate-x-full"
           )}
         >
-          <Sidebar onNavigate={() => setMobileOpen(false)} />
+          <Sidebar
+            sections={sections}
+            onNavigate={() => setMobileOpen(false)}
+          />
         </div>
       </div>
 

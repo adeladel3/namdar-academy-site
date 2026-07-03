@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { listArticles } from "@/lib/db";
 import ArticlesTable from "./ArticlesTable";
 import { LinkButton } from "@/components/admin/ui";

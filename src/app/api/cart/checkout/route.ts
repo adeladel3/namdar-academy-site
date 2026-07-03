@@ -4,12 +4,14 @@ import {
   createOrder,
   generateId,
   getCourse,
+  getSalesAgentByCode,
   incrementDiscountUses,
   isEnrolled,
   validateDiscount,
 } from "@/lib/db";
+import { readReferralCookie } from "@/lib/referral";
 import {
-  SEP_START_URL,
+  getPublicBaseUrl,
   isSepConfigured,
   requestToken,
   tomanToRial,
@@ -92,6 +94,31 @@ export async function POST(req: Request) {
   // so we can expand on success; each item gets its own enrollment.
   const orderId = generateId("ord");
   const bundleSlug = items.length === 1 ? items[0].slug : items.map((i) => i.slug).join(",");
+
+  // Referral attribution. For multi-item bundles we take the weighted
+  // average commission rate so an agent who refers a bundle of unevenly
+  // configured courses still gets a sensible payout. Single-item bundles
+  // reduce to a plain percentage of finalAmount.
+  const refCode = readReferralCookie(req);
+  const agent = refCode ? getSalesAgentByCode(refCode) : undefined;
+  const attributable = agent && agent.isActive ? agent : undefined;
+  let commissionAmount = 0;
+  let weightedRate = 0;
+  if (attributable) {
+    for (const it of items) {
+      const c = getCourse(it.slug);
+      const r = Math.max(
+        0,
+        Math.min(100, c?.agentCommissionPercent ?? 0),
+      );
+      commissionAmount += Math.round((it.price * r) / 100);
+    }
+    weightedRate =
+      finalAmount > 0
+        ? Math.round((commissionAmount * 100) / finalAmount)
+        : 0;
+  }
+
   createOrder({
     id: orderId,
     userId: session.userId,
@@ -101,17 +128,25 @@ export async function POST(req: Request) {
     finalAmount,
     status: "pending",
     paymentMethod: "sep",
-    refNum: body.couponCode ? `COUPON:${body.couponCode.toUpperCase()}` : undefined,
+    couponCode: body.couponCode ? body.couponCode.toUpperCase() : undefined,
     createdAt: Date.now(),
+    ...(attributable
+      ? {
+          referralCode: attributable.referralCode,
+          agentId: attributable.id,
+          commissionRate: weightedRate,
+          commissionAmount,
+        }
+      : {}),
   });
 
-  const origin = new URL(req.url).origin;
-  const callbackUrl = new URL("/api/payment/callback", origin).toString();
+  const baseUrl = getPublicBaseUrl(req.url);
+  const callbackUrl = new URL("/api/payment/callback", baseUrl).toString();
 
   if (!isSepConfigured()) {
     // Dev simulate
     if (body.couponCode) incrementDiscountUses(body.couponCode);
-    const url = new URL("/api/payment/callback", origin);
+    const url = new URL("/api/payment/callback", baseUrl || new URL(req.url).origin);
     url.searchParams.set("ResNum", orderId);
     url.searchParams.set("State", "OK");
     url.searchParams.set("RefNum", "DEV-" + orderId);
@@ -141,7 +176,5 @@ export async function POST(req: Request) {
   }
   if (body.couponCode) incrementDiscountUses(body.couponCode);
 
-  return NextResponse.json({
-    paymentUrl: `${SEP_START_URL}?token=${encodeURIComponent(token.token)}`,
-  });
+  return NextResponse.json({ paymentUrl: token.paymentUrl });
 }

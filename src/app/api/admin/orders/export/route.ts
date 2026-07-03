@@ -1,18 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { getCourse, getUser, listAllOrders } from "@/lib/db";
+import { csvCell, csvRow } from "@/lib/csv";
 
-function csvEscape(v: unknown) {
-  if (v === undefined || v === null) return "";
-  const s = String(v);
-  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
-
-export async function GET() {
-  const guard = await requireStaff();
+export async function GET(req: Request) {
+  const guard = await requireStaff(req);
   if (!guard.ok) return guard.response;
 
   const orders = listAllOrders();
@@ -32,29 +24,27 @@ export async function GET() {
     "ref_num",
     "refunded",
   ];
-  const lines = [header.join(",")];
+  const lines = [header.map(csvCell).join(",")];
   for (const o of orders) {
     const u = getUser(o.userId);
     const c = getCourse(o.courseSlug);
     lines.push(
-      [
+      csvRow([
         o.id,
         new Date(o.createdAt).toISOString(),
         o.paidAt ? new Date(o.paidAt).toISOString() : "",
-        u?.name,
-        u?.phone,
+        u?.name ?? "",
+        u?.phone ?? "",
         o.courseSlug,
-        c?.title,
+        c?.title ?? "",
         o.amount,
         o.discountAmount,
         o.finalAmount,
         o.status,
         o.paymentMethod,
-        o.refNum,
+        o.refNum ?? "",
         o.refundAmount ?? "",
-      ]
-        .map(csvEscape)
-        .join(",")
+      ])
     );
   }
   const body = "\uFEFF" + lines.join("\n");

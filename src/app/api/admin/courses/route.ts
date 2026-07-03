@@ -6,6 +6,7 @@ import {
   upsertCourse,
   type CourseLevelKey,
 } from "@/lib/db";
+import { isValidSlug } from "@/lib/slug";
 
 const VALID_LEVELS: CourseLevelKey[] = ["beginner", "intermediate", "advanced"];
 
@@ -33,9 +34,9 @@ export async function POST(req: Request) {
   }
   const slug = body.slug?.trim();
   const title = body.title?.trim();
-  if (!slug || !/^[a-z0-9-]+$/i.test(slug)) {
+  if (!slug || !isValidSlug(slug)) {
     return NextResponse.json(
-      { error: "slug باید فقط حروف انگلیسی، عدد و خط تیره باشد" },
+      { error: "آدرس فقط می‌تواند شامل حروف فارسی/انگلیسی، عدد و خط تیره باشد" },
       { status: 400 }
     );
   }

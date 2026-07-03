@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { generateId, upsertMedia } from "@/lib/db";
-import { detectKind, saveFile } from "@/lib/media";
+import { detectKind, isAllowedMime, saveFile } from "@/lib/media";
 
 export const runtime = "nodejs";
 
 const MAX_SIZE = 200 * 1024 * 1024; // 200 MB cap
 
 export async function POST(req: Request) {
-  const guard = await requireStaff();
+  const guard = await requireStaff(req);
   if (!guard.ok) return guard.response;
 
   let form: FormData;
@@ -28,17 +28,40 @@ export async function POST(req: Request) {
     );
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const saved = saveFile(buffer, file.name);
+  const mime = (file.type || "application/octet-stream").toLowerCase();
+  if (!isAllowedMime(mime)) {
+    return NextResponse.json(
+      {
+        error: "نوع فایل مجاز نیست.",
+      },
+      { status: 415 }
+    );
+  }
 
-  const mime = file.type || "application/octet-stream";
+  const buffer = Buffer.from(await file.arrayBuffer());
+  let saved;
+  try {
+    saved = saveFile(buffer, mime, file.name);
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message || "ذخیره فایل ناموفق" },
+      { status: 400 }
+    );
+  }
+
   const kind = detectKind(mime);
+
+  // Keep the original filename only for display (listed in admin library);
+  // trim it aggressively so it can't hide a payload in the UI itself.
+  const safeDisplayName = (file.name || "upload")
+    .replace(/[\u0000-\u001f\u007f<>"']/g, "")
+    .slice(0, 200);
 
   const asset = {
     id: generateId("m"),
     kind,
     url: saved.url,
-    fileName: file.name,
+    fileName: safeDisplayName,
     fileSize: file.size,
     mimeType: mime,
     uploadedBy: guard.session.userId,

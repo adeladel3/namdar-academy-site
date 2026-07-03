@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>liquid glass</title>
+
+  <style>
+    *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { background: #e8e3d8; }
+
+    body {
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+        "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 64px 24px 120px;
+      gap: 60px;
+
+      /* NEUTRAL warm off-white. Subtle radial light from above so
+         glass has light to refract, but not so colorful it kills
+         the transparency illusion.                                  */
+      background:
+        radial-gradient(120% 80% at 50% -10%, #f4efe5 0%, transparent 55%),
+        radial-gradient(90% 70% at 12% 95%, rgba(255,200,160,0.16) 0%, transparent 60%),
+        radial-gradient(90% 70% at 88% 95%, rgba(160,200,255,0.16) 0%, transparent 60%),
+        radial-gradient(70% 60% at 50% 110%, #d6cfc1 0%, transparent 60%),
+        #e8e3d8;
+    }
+
+    .title {
+      font-size: 38px;
+      letter-spacing: -0.01em;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .stage {
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      flex-direction: column;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+      flex-wrap: wrap;
+    }
+
+    /* ============================================================
+       GLASS — 4-layer composite
+         L0: backdrop-filter (with SVG turbulence displacement + blur)
+         L1: faint translucent body w/ radial inner light
+         L2: ::before  → bright RIM (gradient ring via mask)
+         L3: ::after   → SPECULAR top crescent + diagonal streak
+                       + tiny pinpoint highlights
+       ============================================================ */
+    .glass {
+      position: relative;
+      isolation: isolate;
+
+      /* L1 body — multi-stop translucent + inner radial light */
+      background:
+        radial-gradient(ellipse 80% 55% at 50% 0%,
+          rgba(255,255,255,0.42) 0%,
+          rgba(255,255,255,0.10) 45%,
+          rgba(255,255,255,0.0) 80%),
+        radial-gradient(ellipse 60% 35% at 50% 100%,
+          rgba(255,255,255,0.30) 0%,
+          rgba(255,255,255,0.0) 70%),
+        rgba(255,255,255,0.045);
+
+      /* L0 — true backdrop processing */
+      backdrop-filter:
+        url(#liquid-distortion)
+        blur(2px)
+        saturate(1.85)
+        brightness(1.06);
+      -webkit-backdrop-filter: blur(14px) saturate(1.85) brightness(1.06);
+
+      color: #1a1a1a;
+      box-shadow:
+        /* outer ambient drop */
+        0 22px 50px -16px rgba(40,30,15,0.22),
+        0 6px 18px rgba(40,30,15,0.10),
+        /* CHROMATIC CAUSTIC projected on the surface below */
+        10px 32px 22px -18px rgba(255,80,150,0.62),
+       -10px 32px 22px -18px rgba(80,180,255,0.62),
+        0 38px 28px -28px rgba(170,255,130,0.55),
+        /* glass thickness — sharp top + bottom rim baked in */
+        inset 0 1.5px 0 rgba(255,255,255,1),
+        inset 0 -1.5px 0 rgba(255,255,255,0.55);
+    }
+
+    /* L2 — RIM gradient ring (acts like polished bevel) */
+    .glass::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.5px;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,1)    0%,
+        rgba(255,255,255,0.45) 22%,
+        rgba(255,255,255,0.08) 50%,
+        rgba(255,255,255,0.55) 78%,
+        rgba(255,255,255,0.95) 100%
+      );
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* L3 — SPECULAR highlights (top crescent + light streaks + dots) */
+    .glass::after {
+      content: "";
+      position: absolute;
+      inset: 1.5px;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 1;
+      background:
+        /* tiny pinpoint specular at top-left */
+        radial-gradient(circle 5px at 10% 22%,
+          rgba(255,255,255,0.95) 0%, transparent 100%),
+        /* secondary smaller pin at top-right */
+        radial-gradient(circle 3px at 86% 28%,
+          rgba(255,255,255,0.7) 0%, transparent 100%),
+        /* TOP crescent */
+        linear-gradient(180deg,
+          rgba(255,255,255,0.55) 0%,
+          rgba(255,255,255,0.10) 28%,
+          transparent 50%),
+        /* DIAGONAL SWEEP streak */
+        linear-gradient(108deg,
+          transparent 30%,
+          rgba(255,255,255,0.22) 48%,
+          rgba(255,255,255,0.10) 54%,
+          transparent 68%),
+        /* BOTTOM inner reflection */
+        linear-gradient(0deg,
+          rgba(255,255,255,0.30) 0%,
+          rgba(255,255,255,0.00) 22%);
+      mix-blend-mode: screen;
+    }
+
+    /* Keep interactive content above all decoration layers */
+    .glass > * { position: relative; z-index: 3; }
+
+    /* ============================================================
+       ROW 1 — Coloured liquid pills + clear icon glass
+       Same multi-layer approach. Body becomes a TRANSLUCENT
+       coloured radial — denser at the bottom (pooled liquid).
+       ============================================================ */
+    .pill {
+      position: relative;
+      isolation: isolate;
+      height: 96px;
+      padding: 0 56px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.30);
+      backdrop-filter:
+        url(#liquid-distortion)
+        blur(2px)
+        saturate(2.0);
+      -webkit-backdrop-filter: blur(16px) saturate(2.0);
+    }
+
+    /* Shared rim & sheen for coloured pills */
+    .pill::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.5px;
+      background: linear-gradient(
+        140deg,
+        rgba(255,255,255,1)    0%,
+        rgba(255,255,255,0.45) 25%,
+        rgba(255,255,255,0.10) 50%,
+        rgba(255,255,255,0.55) 75%,
+        rgba(255,255,255,0.95) 100%);
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .pill::after {
+      content: "";
+      position: absolute;
+      inset: 1.5px;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 1;
+      background:
+        radial-gradient(circle 6px at 12% 24%,
+          rgba(255,255,255,0.95) 0%, transparent 100%),
+        radial-gradient(circle 4px at 86% 30%,
+          rgba(255,255,255,0.7) 0%, transparent 100%),
+        linear-gradient(180deg,
+          rgba(255,255,255,0.55) 0%,
+          rgba(255,255,255,0.05) 35%,
+          transparent 55%),
+        linear-gradient(108deg,
+          transparent 28%,
+          rgba(255,255,255,0.25) 48%,
+          rgba(255,255,255,0.10) 55%,
+          transparent 70%);
+      mix-blend-mode: screen;
+    }
+    .pill > span { position: relative; z-index: 3; }
+
+    /* BLUE — translucent blue liquid trapped in glass */
+    .pill.blue {
+      background:
+        radial-gradient(140% 110% at 50% 100%,
+          rgba(15,55,170,0.82) 0%,
+          rgba(40,110,225,0.66) 35%,
+          rgba(110,170,255,0.42) 70%,
+          rgba(160,200,255,0.22) 100%);
+      box-shadow:
+        0 26px 54px -12px rgba(15,55,170,0.60),
+        0 10px 18px rgba(15,55,170,0.30),
+        12px 36px 24px -16px rgba(255,90,160,0.68),
+       -12px 36px 24px -16px rgba(120,210,255,0.72),
+        0 42px 28px -28px rgba(140,255,180,0.45),
+        inset 0 1.5px 0 rgba(255,255,255,1),
+        inset 0 -1.5px 0 rgba(255,255,255,0.40);
+    }
+
+    /* ORANGE — translucent orange liquid */
+    .pill.orange {
+      background:
+        radial-gradient(140% 110% at 50% 100%,
+          rgba(180,55,15,0.82) 0%,
+          rgba(235,90,30,0.70) 35%,
+          rgba(255,150,80,0.46) 70%,
+          rgba(255,200,140,0.26) 100%);
+      box-shadow:
+        0 26px 54px -12px rgba(190,60,15,0.60),
+        0 10px 18px rgba(190,60,15,0.30),
+        12px 36px 24px -16px rgba(255,210,90,0.72),
+       -12px 36px 24px -16px rgba(255,90,90,0.68),
+        0 42px 28px -28px rgba(255,140,180,0.45),
+        inset 0 1.5px 0 rgba(255,255,255,1),
+        inset 0 -1.5px 0 rgba(255,255,255,0.40);
+    }
+
+    /* Clear icon glass */
+    .icon-btn {
+      width: 110px;
+      height: 90px;
+      border-radius: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 500;
+      color: #2a2a2a;
+    }
+
+    /* ============================================================
+       ROW 2 — fields
+       ============================================================ */
+    .field {
+      width: 360px;
+      height: 76px;
+      border-radius: 22px;
+      padding: 0 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 19px;
+      color: #1f1f1f;
+    }
+    .field .label { font-weight: 500; }
+    .field .right { display: inline-flex; align-items: center; gap: 16px; color: #444; }
+    .field .divider {
+      width: 1px;
+      height: 28px;
+      background: rgba(0,0,0,0.20);
+    }
+    .field .chev { font-size: 20px; opacity: 0.55; }
+
+    /* ============================================================
+       ROW 3 — Selech + ON / OFF switches
+       ============================================================ */
+    .selech {
+      width: 280px;
+      height: 70px;
+      border-radius: 999px;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 19px;
+      color: #1f1f1f;
+      font-weight: 500;
+    }
+
+    .switch {
+      width: 130px;
+      height: 70px;
+      border-radius: 999px;
+      position: relative;
+      isolation: isolate;
+    }
+    .thumb {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      z-index: 4;
+    }
+
+    /* ON — green tinted liquid glass */
+    .switch.on {
+      backdrop-filter:
+        url(#liquid-distortion)
+        blur(2px)
+        saturate(2.0);
+      -webkit-backdrop-filter: blur(16px) saturate(2.0);
+      background:
+        radial-gradient(140% 110% at 50% 100%,
+          rgba(40,150,80,0.78) 0%,
+          rgba(80,200,120,0.60) 40%,
+          rgba(160,240,180,0.38) 80%);
+      box-shadow:
+        0 20px 42px -12px rgba(20,140,40,0.55),
+        0 8px 16px rgba(20,140,40,0.25),
+        10px 30px 22px -18px rgba(255,200,80,0.60),
+       -10px 30px 22px -18px rgba(120,255,200,0.70),
+        inset 0 1.5px 0 rgba(255,255,255,1),
+        inset 0 -1.5px 0 rgba(255,255,255,0.40);
+    }
+    .switch.on::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.5px;
+      background: linear-gradient(135deg,
+        rgba(255,255,255,1), rgba(255,255,255,0.30) 50%,
+        rgba(255,255,255,0.85));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .switch.on::after {
+      content: "";
+      position: absolute;
+      inset: 1.5px;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 1;
+      background:
+        radial-gradient(circle 4px at 18% 25%,
+          rgba(255,255,255,0.95) 0%, transparent 100%),
+        linear-gradient(180deg,
+          rgba(255,255,255,0.55), transparent 45%);
+      mix-blend-mode: screen;
+    }
+    .switch.on .thumb {
+      right: 10px;
+      background:
+        radial-gradient(circle at 32% 26%,
+          #e6ffe6 0%, #6de17a 35%, #2cb24a 70%, #167830 100%);
+      box-shadow:
+        0 6px 14px rgba(15,120,40,0.55),
+        inset 0 2.5px 3px rgba(255,255,255,0.85),
+        inset 0 -3px 5px rgba(0,80,0,0.45),
+        inset 0 0 0 1px rgba(255,255,255,0.3),
+        0 0 0 1px rgba(255,255,255,0.55);
+    }
+
+    /* OFF thumb — clear glass marble */
+    .switch.off .thumb {
+      left: 10px;
+      background:
+        radial-gradient(circle at 32% 26%,
+          rgba(255,255,255,0.95) 0%,
+          rgba(255,255,255,0.55) 60%,
+          rgba(220,220,228,0.45) 100%);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow:
+        0 4px 12px rgba(0,0,0,0.20),
+        inset 0 2px 2px rgba(255,255,255,1),
+        inset 0 -1.5px 2px rgba(0,0,0,0.10),
+        0 0 0 1px rgba(255,255,255,0.7);
+    }
+
+    /* ============================================================
+       ROW 4 — cards (Tabs & Modal)
+       ============================================================ */
+    .card {
+      width: 340px;
+      border-radius: 32px;
+      padding: 14px 0 6px;
+      color: #1f1f1f;
+    }
+    .card .head {
+      padding: 14px 22px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 22px;
+      font-weight: 500;
+    }
+    .card .x {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.45);
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.95);
+      color: #444;
+      font-size: 13px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .divider-h {
+      height: 1px;
+      background: rgba(0,0,0,0.08);
+      margin: 0 22px;
+    }
+    .card .row-item {
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 19px;
+      font-weight: 400;
+      color: #1f1f1f;
+    }
+    .card .row-item .arrow { opacity: 0.55; font-size: 18px; }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       SVG turbulence + displacement filter — used by backdrop-filter
+       to actually DISTORT what is behind the glass (real refraction).
+       Falls back to plain blur in browsers that don't accept url().
+       ================================================================ -->
+  <svg style="position:fixed;width:0;height:0;visibility:hidden" aria-hidden="true">
+    <defs>
+      <filter id="liquid-distortion" x="0%" y="0%" width="100%" height="100%"
+              color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise"
+                      baseFrequency="0.008 0.012"
+                      numOctaves="2"
+                      seed="17"
+                      result="noise" />
+        <feGaussianBlur in="noise" stdDeviation="1.2" result="blurNoise" />
+        <feDisplacementMap in="SourceGraphic"
+                           in2="blurNoise"
+                           scale="36"
+                           xChannelSelector="R"
+                           yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="title">liquid glass</div>
+
+  <div class="stage">
+    <!-- Row 1 -->
+    <div class="row">
+      <button class="pill blue"><span>Start project</span></button>
+      <button class="pill orange"><span>Secondary</span></button>
+      <button class="icon-btn glass">Icon</button>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="row">
+      <div class="field glass">
+        <span class="label">Text Field</span>
+        <span class="right"><span class="chev">⌄</span></span>
+      </div>
+      <div class="field glass">
+        <span class="label">Suggestions</span>
+        <span class="right">
+          <span class="divider"></span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="7" stroke="#2a2a2a" stroke-width="1.8"/>
+            <path d="M20 20l-3-3" stroke="#2a2a2a" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Row 3 -->
+    <div class="row">
+      <div class="selech glass">
+        <span>Selech</span>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M5 12.5l4.5 4.5L19 7.5"
+            stroke="#2ec74a" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="switch on"><span class="thumb"></span></div>
+      <div class="switch off glass"><span class="thumb"></span></div>
+    </div>
+
+    <!-- Row 4 -->
+    <div class="row">
+      <div class="card glass">
+        <div class="head">
+          <span>Tabs</span>
+          <span class="x">✕</span>
+        </div>
+        <div class="divider-h"></div>
+        <div class="row-item">
+          <span>Find files…</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="divider-h"></div>
+        <div class="row-item"><span>Add collaborator</span></div>
+      </div>
+
+      <div class="card glass">
+        <div class="head">
+          <span>Modal</span>
+          <span class="x">✕</span>
+        </div>
+        <div class="divider-h"></div>
+        <div class="row-item"><span>Card</span></div>
+        <div class="divider-h"></div>
+        <div class="row-item"><span>Pro plan</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

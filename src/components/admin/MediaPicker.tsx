@@ -3,20 +3,43 @@
 import { useEffect, useRef, useState } from "react";
 import { cx, Modal, toast } from "./ui";
 import { Icon } from "./Icons";
+import { uploadErrorMessage } from "./uploadError";
 import { faDigits } from "@/lib/formatting";
 import type { MediaAsset } from "@/lib/db";
+
+export type MediaRecommended = {
+  /** Recommended width in pixels (e.g. 1200). */
+  width?: number;
+  /** Recommended height in pixels (e.g. 675). */
+  height?: number;
+  /** Aspect ratio label to show (e.g. "16:9"). Derived when both W/H given. */
+  aspectRatio?: string;
+  /** Max file size in kilobytes. Enforced client-side with a warning toast. */
+  maxSizeKB?: number;
+  /** Accepted extensions to display (e.g. ["JPG", "PNG", "WebP"]). */
+  formats?: string[];
+  /** Short usage description shown beside specs (1–2 sentences). */
+  description?: string;
+};
 
 type Props = {
   kind: "image" | "video" | "file";
   value: string;
   onChange: (url: string) => void;
+  recommended?: MediaRecommended;
 };
 
-export default function MediaPicker({ kind, value, onChange }: Props) {
+export default function MediaPicker({
+  kind,
+  value,
+  onChange,
+  recommended,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
+      {recommended && <RecommendedHint kind={kind} r={recommended} />}
       <div className="space-y-2">
         {value ? (
           <div className="relative">
@@ -68,6 +91,7 @@ export default function MediaPicker({ kind, value, onChange }: Props) {
         open={open}
         onClose={() => setOpen(false)}
         kind={kind}
+        recommended={recommended}
         onPick={(url) => {
           onChange(url);
           setOpen(false);
@@ -77,15 +101,77 @@ export default function MediaPicker({ kind, value, onChange }: Props) {
   );
 }
 
+function RecommendedHint({
+  kind,
+  r,
+}: {
+  kind: Props["kind"];
+  r: MediaRecommended;
+}) {
+  const dims = r.width && r.height ? `${r.width} × ${r.height}` : undefined;
+  const ar =
+    r.aspectRatio ??
+    (r.width && r.height ? `${r.width}:${r.height}` : undefined);
+  const size = r.maxSizeKB
+    ? r.maxSizeKB >= 1024
+      ? `${(r.maxSizeKB / 1024).toFixed(1)} مگابایت`
+      : `${r.maxSizeKB} کیلوبایت`
+    : undefined;
+  const kindLabel =
+    kind === "image" ? "تصویر" : kind === "video" ? "ویدئو" : "فایل";
+  return (
+    <div className="mb-2 rounded-2xl border border-[#d9e7ff] bg-[#f5f9ff] px-4 py-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon.Info width={14} height={14} className="text-[#1b3c8a]" />
+        <span className="text-[12px] font-bold text-[#1b3c8a]">
+          راهنمای این {kindLabel}
+        </span>
+      </div>
+      {r.description && (
+        <p className="text-[12px] text-[#010514]/70 leading-6 mb-2">
+          {r.description}
+        </p>
+      )}
+      <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-[#010514]/75">
+        {dims && (
+          <li>
+            <span className="text-[#010514]/50">ابعاد پیشنهادی:</span>{" "}
+            <span className="font-bold font-mono" dir="ltr">
+              {dims}
+              {ar && <span className="text-[#010514]/55"> ({ar})</span>}
+            </span>
+          </li>
+        )}
+        {size && (
+          <li>
+            <span className="text-[#010514]/50">حداکثر حجم:</span>{" "}
+            <span className="font-bold">{size}</span>
+          </li>
+        )}
+        {r.formats && r.formats.length > 0 && (
+          <li className="col-span-2">
+            <span className="text-[#010514]/50">فرمت‌های مجاز:</span>{" "}
+            <span className="font-bold font-mono" dir="ltr">
+              {r.formats.join(" · ")}
+            </span>
+          </li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
 function MediaLibraryModal({
   open,
   onClose,
   kind,
+  recommended,
   onPick,
 }: {
   open: boolean;
   onClose: () => void;
   kind: Props["kind"];
+  recommended?: MediaRecommended;
   onPick: (url: string) => void;
 }) {
   const [items, setItems] = useState<MediaAsset[]>([]);
@@ -110,8 +196,22 @@ function MediaLibraryModal({
   async function upload(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    let lastUploadedUrl = "";
     try {
       for (const file of Array.from(files)) {
+        if (
+          recommended?.maxSizeKB &&
+          file.size > recommended.maxSizeKB * 1024
+        ) {
+          toast(
+            `فایل «${file.name}» بزرگ‌تر از حد پیشنهادی (${
+              recommended.maxSizeKB >= 1024
+                ? (recommended.maxSizeKB / 1024).toFixed(1) + " مگابایت"
+                : recommended.maxSizeKB + " کیلوبایت"
+            }) است؛ بهتر است فشرده شود ولی آپلود ادامه می‌یابد.`,
+            "info"
+          );
+        }
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/admin/media/upload", {
@@ -119,11 +219,21 @@ function MediaLibraryModal({
           body: fd,
         });
         if (!res.ok) {
-          const d = await res.json().catch(() => ({}));
-          toast(d.error ?? "بارگذاری ناموفق", "err");
+          toast(await uploadErrorMessage(res, file), "err");
+          continue;
         }
+        const data = (await res.json().catch(() => ({}))) as {
+          asset?: { url?: string };
+          url?: string;
+        };
+        const url = data.asset?.url ?? data.url ?? "";
+        if (url) lastUploadedUrl = url;
       }
       await load();
+      if (lastUploadedUrl) {
+        onPick(lastUploadedUrl);
+        toast("فایل آپلود و انتخاب شد", "ok");
+      }
     } finally {
       setUploading(false);
     }
@@ -131,6 +241,7 @@ function MediaLibraryModal({
 
   return (
     <Modal open={open} onClose={onClose} title="کتابخانه رسانه" width="max-w-4xl">
+      {recommended && <RecommendedHint kind={kind} r={recommended} />}
       <div className="mb-4 flex items-center gap-3">
         <input
           ref={fileInput}

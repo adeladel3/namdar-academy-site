@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { listTags } from "@/lib/db";
 import TagsManager from "../categories/TagsManager";
 import { cx } from "@/lib/cx";

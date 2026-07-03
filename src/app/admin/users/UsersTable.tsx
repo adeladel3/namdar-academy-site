@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { useState } from "react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Badge, Select } from "@/components/admin/ui";
@@ -11,7 +11,18 @@ import {
   formatDate,
   formatPhone,
   formatRelative,
+  toEnglishDigits,
 } from "@/lib/formatting";
+
+// Strip everything that isn't a digit (spaces, dashes, leading +, leading 0,
+// country prefix 98) so "۰۹۱۹", "+98 919-445-6248" and "9194456248" all
+// compare against the same canonical form.
+function phoneDigits(raw: string): string {
+  const eng = toEnglishDigits(raw).replace(/\D/g, "");
+  if (eng.startsWith("98")) return eng.slice(2);
+  if (eng.startsWith("0")) return eng.slice(1);
+  return eng;
+}
 import type { UserRecord } from "@/lib/db";
 
 export default function UsersTable({ users }: { users: UserRecord[] }) {
@@ -118,11 +129,16 @@ export default function UsersTable({ users }: { users: UserRecord[] }) {
       columns={columns}
       rowKey={(u) => u.id}
       initialSort={{ key: "createdAt", dir: "desc" }}
-      searchFn={(u, q) =>
-        u.name.toLowerCase().includes(q) ||
-        u.phone.includes(q) ||
-        (u.email?.toLowerCase().includes(q) ?? false)
-      }
+      searchFn={(u, q) => {
+        if (u.name.toLowerCase().includes(q)) return true;
+        if (u.email?.toLowerCase().includes(q)) return true;
+        // For phone, normalize both sides so Persian digits, +98 prefix,
+        // spaces and dashes all match. If the query contains any digit
+        // at all, compare purely on canonical digits.
+        const qDigits = phoneDigits(q);
+        if (qDigits && phoneDigits(u.phone).includes(qDigits)) return true;
+        return false;
+      }}
       searchPlaceholder="جستجو بر اساس نام، موبایل یا ایمیل"
       filters={
         <div className="flex items-center gap-2">

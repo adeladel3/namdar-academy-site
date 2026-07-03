@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { listCategories, listCourses } from "@/lib/db";
 import CoursesTable from "./CoursesTable";
 import { Icon } from "@/components/admin/Icons";

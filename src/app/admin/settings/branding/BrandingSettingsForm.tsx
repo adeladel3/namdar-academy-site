@@ -22,6 +22,14 @@ export default function BrandingSettingsForm({
             <Field label="لوگو">
               <MediaPicker
                 kind="image"
+                recommended={{
+                  width: 800,
+                  height: 240,
+                  maxSizeKB: 150,
+                  formats: ["PNG", "SVG", "WebP"],
+                  description:
+                    "لوگوی اصلی سایت با پس‌زمینه شفاف ترجیحی است.",
+                }}
                 value={String(v ?? "")}
                 onChange={(url) => set(url)}
               />

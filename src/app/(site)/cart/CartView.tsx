@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
+import { courseDetailHref } from "@/lib/course-links";
 import { formatToman } from "@/lib/formatting";
 
 export default function CartView() {
@@ -130,7 +131,7 @@ export default function CartView() {
                   />
                   <div className="flex-1 min-w-0">
                     <Link
-                      href={`/courses/${item.slug}`}
+                      href={courseDetailHref(item.slug)}
                       className="font-bold text-[#010514] hover:text-[#1b3c8a] transition truncate block"
                     >
                       {item.title}

@@ -1,5 +1,6 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { listCourses } from "@/lib/db";
+import { courseDetailHref } from "@/lib/course-links";
 import { LEVEL_LABELS, faDigits, formatToman } from "@/lib/formatting";
 
 export default function RelatedCourses({
@@ -33,7 +34,7 @@ export default function RelatedCourses({
         {related.map((c) => (
           <Link
             key={c.slug}
-            href={`/courses/${c.slug}`}
+            href={courseDetailHref(c.slug)}
             className="group bg-white rounded-3xl overflow-hidden shadow hover:shadow-xl hover:-translate-y-1 transition border border-[#e5eaf5]"
           >
             <div className="relative aspect-video bg-gradient-to-br from-[#136cb5] to-[#49bbbd] overflow-hidden">

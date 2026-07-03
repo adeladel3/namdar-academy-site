@@ -1,14 +1,76 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import Link from "@/components/SafeLink";
 import { notFound } from "next/navigation";
 import { getArticle, listArticles } from "@/lib/db";
 import { faDigits, formatDate } from "@/lib/formatting";
 import ShareButtons from "@/components/ShareButtons";
+import { absUrl, articleJsonLd, breadcrumbJsonLd, SITE } from "@/lib/seo";
 
 export function generateStaticParams() {
   return listArticles({ publishedOnly: true }).map((a) => ({ slug: a.slug }));
 }
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const article = getArticle(slug);
+  if (!article) return { title: "مقاله پیدا نشد" };
+
+  // Prefer admin-supplied SEO overrides; fall back to the display fields so
+  // articles without SEO tuning still get sensible meta tags.
+  const title = article.seoTitle?.trim() || article.title;
+  const description =
+    article.metaDescription?.trim() ||
+    article.excerpt ||
+    article.content?.replace(/<[^>]+>/g, "").slice(0, 160) ||
+    SITE.description;
+  const image = article.ogImage?.trim()
+    ? absUrl(article.ogImage)
+    : article.coverImage
+      ? absUrl(article.coverImage)
+      : SITE.ogImage;
+  const canonical =
+    article.canonicalUrl?.trim() || `/articles/${slug}`;
+
+  return {
+    title,
+    description,
+    keywords: article.tags && article.tags.length > 0 ? article.tags : undefined,
+    authors: article.authorName ? [{ name: article.authorName }] : undefined,
+    alternates: { canonical },
+    robots: article.noindex
+      ? { index: false, follow: false }
+      : { index: true, follow: true },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: `/articles/${slug}`,
+      siteName: SITE.name,
+      locale: SITE.locale,
+      images: [{ url: image, width: 1200, height: 630, alt: article.title }],
+      publishedTime: article.publishedAt
+        ? new Date(article.publishedAt).toISOString()
+        : undefined,
+      modifiedTime: article.updatedAt
+        ? new Date(article.updatedAt).toISOString()
+        : undefined,
+      authors: article.authorName ? [article.authorName] : undefined,
+      tags: article.tags,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function ArticleDetailPage({
   params,
@@ -26,8 +88,29 @@ export default async function ArticleDetailPage({
     .filter((a) => a.slug !== slug)
     .slice(0, 3);
 
+  const jsonLd = [
+    articleJsonLd({
+      slug: article.slug,
+      title: article.title,
+      excerpt: article.excerpt,
+      coverImage: article.ogImage || article.coverImage,
+      authorName: article.authorName || null,
+      publishedAt: article.publishedAt,
+      updatedAt: article.updatedAt,
+    }),
+    breadcrumbJsonLd([
+      { name: "خانه", url: "/" },
+      { name: "مقالات", url: "/articles" },
+      { name: article.title, url: `/articles/${article.slug}` },
+    ]),
+  ];
+
   return (
     <article className="bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="bg-gradient-to-l from-[#0f1f4a] via-[#1b3c8a] to-[#136cb5] text-white py-12 md:py-16 px-4 md:px-8">
         <div className="max-w-[900px] mx-auto">
           <nav className="text-white/70 text-sm mb-5 flex gap-2">

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { listArticles } from "@/lib/db";
 import ArticlesFilter from "./ArticlesFilter";
 import { faDigits, formatDate } from "@/lib/formatting";

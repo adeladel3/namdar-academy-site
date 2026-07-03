@@ -4,10 +4,16 @@ import {
   createOrder,
   generateId,
   getCourse,
+  getReferralLink,
+  getSalesAgentByCode,
   isEnrolled,
 } from "@/lib/db";
 import {
-  SEP_START_URL,
+  readReferralCookie,
+  readReferralLinkCookie,
+} from "@/lib/referral";
+import {
+  getPublicBaseUrl,
   isSepConfigured,
   requestToken,
   tomanToRial,
@@ -51,6 +57,31 @@ export async function POST(req: Request) {
   const discountAmount = Math.max(0, originalAmount - finalAmount);
 
   const orderId = generateId("ord");
+
+  // Referral attribution — read the cookie set by the edge middleware. Only
+  // attribute if the agent is still active; freeze the rate as it stands
+  // today so later changes to course.agentCommissionPercent don't rewrite
+  // already-completed sales.
+  const refCode = readReferralCookie(req);
+  const linkIdCookie = readReferralLinkCookie(req);
+  const agent = refCode ? getSalesAgentByCode(refCode) : undefined;
+  const attributable = agent && agent.isActive ? agent : undefined;
+  // Only credit the specific link when it both exists and belongs to the
+  // same agent — defends against a cookie tampering that could otherwise
+  // inflate one link's conversion stats with another agent's sale.
+  const link = linkIdCookie ? getReferralLink(linkIdCookie) : undefined;
+  const linkBelongsToAgent =
+    attributable && link && link.agentId === attributable.id && link.isActive
+      ? link
+      : undefined;
+  const rate =
+    attributable && typeof course.agentCommissionPercent === "number"
+      ? Math.max(0, Math.min(100, course.agentCommissionPercent))
+      : 0;
+  const commissionAmount = attributable
+    ? Math.round((finalAmount * rate) / 100)
+    : 0;
+
   createOrder({
     id: orderId,
     userId: session.userId,
@@ -61,14 +92,23 @@ export async function POST(req: Request) {
     status: "pending",
     paymentMethod: "sep",
     createdAt: Date.now(),
+    ...(attributable
+      ? {
+          referralCode: attributable.referralCode,
+          agentId: attributable.id,
+          referralLinkId: linkBelongsToAgent?.id,
+          commissionRate: rate,
+          commissionAmount,
+        }
+      : {}),
   });
 
-  const origin = new URL(req.url).origin;
-  const callbackUrl = new URL("/api/payment/callback", origin).toString();
+  const baseUrl = getPublicBaseUrl(req.url);
+  const callbackUrl = new URL("/api/payment/callback", baseUrl).toString();
 
   if (!isSepConfigured()) {
     // Dev fallback: bypass bank, redirect straight to success callback.
-    const url = new URL("/api/payment/callback", origin);
+    const url = new URL("/api/payment/callback", baseUrl || new URL(req.url).origin);
     url.searchParams.set("ResNum", orderId);
     url.searchParams.set("State", "OK");
     url.searchParams.set("RefNum", "DEV-" + orderId);
@@ -89,6 +129,5 @@ export async function POST(req: Request) {
       { status: 502 }
     );
   }
-  const redirectUrl = `${SEP_START_URL}?token=${encodeURIComponent(token.token)}`;
-  return NextResponse.json({ paymentUrl: redirectUrl });
+  return NextResponse.json({ paymentUrl: token.paymentUrl });
 }

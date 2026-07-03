@@ -1,0 +1,32 @@
+[Unit]
+Description=Namdar Academy (Next.js standalone)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/namdar-academy
+EnvironmentFile=/var/www/namdar-academy/.env.production
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/var/log/namdar/app.log
+StandardError=append:/var/log/namdar/app.err.log
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+# public/uploads باید نوشتنی باشد چون ضمیمه‌های تیکت و رسانه‌های آپلودی
+# ادمین موقع اجرا داخل آن نوشته می‌شوند. بدون این، نوشتن با EROFS شکست
+# می‌خورد و /api/files/<name> برای فایل‌های آپلودشده 404 می‌دهد.
+ReadWritePaths=/var/www/namdar-academy/data /var/www/namdar-academy/public/uploads /var/log/namdar
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

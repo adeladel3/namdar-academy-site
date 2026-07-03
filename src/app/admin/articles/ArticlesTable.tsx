@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { Badge, Dropdown, DropdownItem } from "@/components/admin/ui";
 import { formatDate } from "@/lib/formatting";

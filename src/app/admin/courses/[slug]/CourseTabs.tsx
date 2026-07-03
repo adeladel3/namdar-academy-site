@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { usePathname } from "next/navigation";
 import { cx } from "@/components/admin/ui";
 
@@ -16,6 +16,11 @@ export default function CourseTabs({ slug }: { slug: string }) {
       href: `${base}/curriculum`,
       label: "سرفصل‌ها و ویدیوها",
       match: `${base}/curriculum`,
+    },
+    {
+      href: `${base}/syllabus`,
+      label: "سرفصل تفصیلی صفحه دوره",
+      match: `${base}/syllabus`,
     },
     {
       href: `${base}/students`,

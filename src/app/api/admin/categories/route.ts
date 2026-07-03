@@ -6,14 +6,7 @@ import {
   logAudit,
   upsertCategory,
 } from "@/lib/db";
-
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, "")
-    .replace(/\s+/g, "-");
-}
+import { slugifyTitle } from "@/lib/slug";
 
 export async function GET() {
   const guard = await requireStaff();
@@ -34,7 +27,7 @@ export async function POST(req: Request) {
   const name = body.name?.trim();
   if (!name) return NextResponse.json({ error: "نام الزامی" }, { status: 400 });
 
-  const slug = (body.slug?.trim() ? slugify(body.slug) : slugify(name)) || generateId("cat");
+  const slug = (body.slug?.trim() ? slugifyTitle(body.slug) : slugifyTitle(name)) || generateId("cat");
   const id = `cat_${slug}`;
 
   upsertCategory({

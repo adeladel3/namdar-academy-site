@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { enroll, getCourse, getUser, logAudit } from "@/lib/db";
+import { ensureLicenseForEnrollment } from "@/lib/spotplayer";
 
 export async function POST(
   req: Request,
@@ -25,7 +26,17 @@ export async function POST(
   if (!course)
     return NextResponse.json({ error: "course not found" }, { status: 404 });
 
-  enroll(id, body.slug, { source: "grant", grantedBy: guard.session.userId });
+  const enrollment = enroll(id, body.slug, {
+    source: "grant",
+    grantedBy: guard.session.userId,
+  });
+  // دوره‌های اسپات‌پلیر: ساخت لایسنس بلافاصله پس از اعطا. در صورت خطا روی
+  // ثبت‌نام ذخیره می‌شود و کاربر موقع باز کردن صفحه لایسنس دوباره تلاش می‌کند.
+  try {
+    await ensureLicenseForEnrollment(enrollment.id);
+  } catch (e) {
+    console.error("[spotplayer] ensure after grant failed:", e);
+  }
   logAudit({
     actorId: guard.session.userId,
     action: "user.grant-course",

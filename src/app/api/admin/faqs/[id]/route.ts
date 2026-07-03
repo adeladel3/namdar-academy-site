@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { deleteFaq, getFaq, upsertFaq } from "@/lib/db";
+import { sanitizeRichHtml } from "@/lib/sanitize-html";
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const guard = await requireStaff();
+  const guard = await requireStaff(req);
   if (!guard.ok) return guard.response;
   const { id } = await params;
   const existing = getFaq(id);
@@ -22,7 +23,10 @@ export async function PATCH(
   upsertFaq({
     ...existing,
     question: body.question?.trim() || existing.question,
-    answer: body.answer ?? existing.answer,
+    answer:
+      typeof body.answer === "string"
+        ? sanitizeRichHtml(body.answer)
+        : existing.answer,
     order: typeof body.order === "number" ? body.order : existing.order,
     published:
       typeof body.published === "boolean" ? body.published : existing.published,
@@ -31,10 +35,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const guard = await requireStaff();
+  const guard = await requireStaff(req);
   if (!guard.ok) return guard.response;
   const { id } = await params;
   deleteFaq(id);

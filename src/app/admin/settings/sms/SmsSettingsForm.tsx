@@ -64,14 +64,31 @@ export default function SmsSettingsForm({
           key: "otpTemplate",
           render: (v, set) => (
             <Field
-              label="قالب OTP"
-              hint="متغیرها: {{code}}، {{brand}}"
+              label="متن قالب کد ورود"
+              hint="متغیرها: {{code}}، {{brand}} — در حالت ارسال معمولی استفاده می‌شود."
             >
               <Textarea
                 rows={3}
                 value={String(v ?? "")}
                 onChange={(e) => set(e.target.value)}
                 placeholder="کد ورود شما به {{brand}}: {{code}}"
+              />
+            </Field>
+          ),
+        },
+        {
+          key: "otpPatternName",
+          render: (v, set) => (
+            <Field
+              label="نام الگوی تایید شده کاوه‌نگار"
+              hint="اگر در پنل کاوه‌نگار الگوی مخصوص کد ورود ساخته و تایید گرفته‌اید، نام آن را این‌جا بگذارید. در این صورت متن قالب بالا نادیده گرفته می‌شود و از مسیر verify/lookup ارسال می‌شود (مطمئن‌تر). خالی = ارسال پیامک معمولی."
+            >
+              <Input
+                dir="ltr"
+                className="font-mono"
+                value={String(v ?? "")}
+                onChange={(e) => set(e.target.value)}
+                placeholder="namdar-otp"
               />
             </Field>
           ),

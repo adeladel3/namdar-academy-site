@@ -237,6 +237,14 @@ function TestimonialModal({
         <Field label="آواتار (اختیاری)">
           <MediaPicker
             kind="image"
+            recommended={{
+              width: 400,
+              height: 400,
+              maxSizeKB: 200,
+              formats: ["JPG", "PNG", "WebP"],
+              description:
+                "تصویر گرد کوچک که کنار نظر دانشجو نمایش داده می‌شود. ترجیحاً مربعی.",
+            }}
             value={form.avatar}
             onChange={(url) => setForm({ ...form, avatar: url })}
           />

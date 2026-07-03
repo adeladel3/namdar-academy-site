@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import BrandLogo from "@/components/BrandLogo";
+import { toEnglishDigits } from "@/lib/formatting";
 
 type Step = "info" | "otp";
 
@@ -73,8 +75,8 @@ export default function SignupPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#f7fafd] via-white to-[#eef4ff] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-[#e5eaf5]">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-[#1b3c8a] text-white flex items-center justify-center font-bold text-2xl mx-auto mb-4">
-            ن
+          <div className="flex justify-center mb-5">
+            <BrandLogo variant="dark" size="md" />
           </div>
           <h1 className="text-2xl font-bold text-[#010514]">
             {step === "info" ? "ثبت‌نام در نامدار آکادمی" : "تایید شماره"}
@@ -109,7 +111,9 @@ export default function SignupPage() {
                 type="tel"
                 dir="ltr"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) =>
+                  setPhone(toEnglishDigits(e.target.value).replace(/\D/g, "").slice(0, 11))
+                }
                 placeholder="09121234567"
                 maxLength={11}
                 className="w-full h-12 px-4 rounded-xl border border-[#e5eaf5] text-[#010514] text-left focus:outline-none focus:border-[#1b3c8a] focus:ring-2 focus:ring-[#1b3c8a]/15"
@@ -154,7 +158,9 @@ export default function SignupPage() {
                 inputMode="numeric"
                 dir="ltr"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) =>
+                  setOtp(toEnglishDigits(e.target.value).replace(/\D/g, "").slice(0, 6))
+                }
                 placeholder="------"
                 maxLength={6}
                 className="w-full h-14 px-4 rounded-xl border border-[#e5eaf5] text-[#010514] text-center tracking-[0.5em] text-xl font-mono focus:outline-none focus:border-[#1b3c8a] focus:ring-2 focus:ring-[#1b3c8a]/15"

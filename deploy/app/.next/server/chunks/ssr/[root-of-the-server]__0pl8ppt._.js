@@ -1,0 +1,3 @@
+module.exports=[93695,(a,b,c)=>{b.exports=a.x("next/dist/shared/lib/no-fallback-error.external.js",()=>require("next/dist/shared/lib/no-fallback-error.external.js"))},22296,a=>{"use strict";let b=new Set(["mon"]);a.s(["courseDetailHref",0,function(a,c){return c&&c.trim()?c.trim():b.has(a)?"/coaching":`/courses/${a}`},"courseLearnHref",0,function(a,c){return c&&c.trim()?c.trim():b.has(a)?"/coaching":`/dashboard/learn/${a}`}])},10585,a=>{a.v("/_next/static/media/favicon.0x3dzn~oxb6tn.ico"+(globalThis.NEXT_CLIENT_ASSET_SUFFIX||""))},68611,a=>{"use strict";let b={src:a.i(10585).default,width:256,height:256};a.s(["default",0,b])}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__0pl8ppt._.js.map

@@ -1,7 +1,7 @@
 import { listCategories, listTags } from "@/lib/db";
 import CategoriesManager from "./CategoriesManager";
 import TagsManager from "./TagsManager";
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { cx } from "@/lib/cx";
 
 export const dynamic = "force-dynamic";

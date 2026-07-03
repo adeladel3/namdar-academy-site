@@ -6,6 +6,7 @@ import {
   listAllOrders,
   listCourses,
   listUsers,
+  listDiscounts,
   listEnrollmentRecordsForCourse,
   __rawSnapshot,
   type OrderRecord,
@@ -299,6 +300,364 @@ export function getLessonAnalytics(lessonId: string) {
     dropoff,
     eventsCount: events.length,
   };
+}
+
+// --- Marketing / sales reports --------------------------------------------
+
+export type PeriodKey =
+  | "today"
+  | "yesterday"
+  | "7d"
+  | "30d"
+  | "90d"
+  | "ytd"
+  | "all";
+
+export const PERIOD_LABELS: Record<PeriodKey, string> = {
+  today: "امروز",
+  yesterday: "دیروز",
+  "7d": "۷ روز گذشته",
+  "30d": "۳۰ روز گذشته",
+  "90d": "۹۰ روز گذشته",
+  ytd: "از ابتدای سال",
+  all: "کل دوران",
+};
+
+/**
+ * Returns the inclusive [from, to] window for a period plus the previous
+ * equal-length window for period-over-period comparison. Timestamps in ms.
+ */
+export function getPeriodWindow(period: PeriodKey): {
+  from: number;
+  to: number;
+  prevFrom: number;
+  prevTo: number;
+  lengthDays: number;
+} {
+  const now = Date.now();
+  const today0 = startOfDay(now);
+
+  if (period === "today") {
+    return {
+      from: today0,
+      to: now,
+      prevFrom: today0 - DAY,
+      prevTo: today0,
+      lengthDays: 1,
+    };
+  }
+  if (period === "yesterday") {
+    return {
+      from: today0 - DAY,
+      to: today0,
+      prevFrom: today0 - 2 * DAY,
+      prevTo: today0 - DAY,
+      lengthDays: 1,
+    };
+  }
+  if (period === "ytd") {
+    const yearStart = new Date(new Date().getFullYear(), 0, 1).getTime();
+    const prevYearStart = new Date(new Date().getFullYear() - 1, 0, 1).getTime();
+    return {
+      from: yearStart,
+      to: now,
+      prevFrom: prevYearStart,
+      prevTo: yearStart,
+      lengthDays: Math.ceil((now - yearStart) / DAY),
+    };
+  }
+  if (period === "all") {
+    return {
+      from: 0,
+      to: now,
+      prevFrom: 0,
+      prevTo: 0,
+      lengthDays: Math.ceil((now - 0) / DAY),
+    };
+  }
+  const lengthDays = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+  const from = today0 - (lengthDays - 1) * DAY;
+  return {
+    from,
+    to: now,
+    prevFrom: from - lengthDays * DAY,
+    prevTo: from,
+    lengthDays,
+  };
+}
+
+function deltaRatio(current: number, previous: number): number | null {
+  if (!previous) return current === 0 ? 0 : null;
+  return (current - previous) / previous;
+}
+
+/** Revenue + orders + customer KPIs for a given period, with PoP deltas. */
+export function getSalesKPIs(period: PeriodKey) {
+  const w = getPeriodWindow(period);
+  const orders = listAllOrders();
+
+  const paidIn = (from: number, to: number) =>
+    orders.filter(
+      (o) =>
+        o.status === "paid" &&
+        (o.paidAt ?? o.createdAt) >= from &&
+        (o.paidAt ?? o.createdAt) < to
+    );
+
+  const curr = paidIn(w.from, w.to);
+  const prev = paidIn(w.prevFrom, w.prevTo);
+
+  const revenue = curr.reduce((s, o) => s + o.finalAmount, 0);
+  const revenuePrev = prev.reduce((s, o) => s + o.finalAmount, 0);
+  const ordersCount = curr.length;
+  const ordersCountPrev = prev.length;
+  const aov = ordersCount ? revenue / ordersCount : 0;
+  const aovPrev = ordersCountPrev ? revenuePrev / ordersCountPrev : 0;
+  const customers = new Set(curr.map((o) => o.userId)).size;
+  const customersPrev = new Set(prev.map((o) => o.userId)).size;
+  const discountGiven = curr.reduce((s, o) => s + (o.discountAmount ?? 0), 0);
+  const discountGivenPrev = prev.reduce(
+    (s, o) => s + (o.discountAmount ?? 0),
+    0
+  );
+
+  // Repeat rate in this window: customers in this window who also have a
+  // paid order strictly before this window.
+  const priorCustomers = new Set(
+    orders
+      .filter((o) => o.status === "paid" && (o.paidAt ?? o.createdAt) < w.from)
+      .map((o) => o.userId)
+  );
+  const repeatCustomers = new Set(
+    curr.filter((o) => priorCustomers.has(o.userId)).map((o) => o.userId)
+  );
+  const repeatRate = customers ? repeatCustomers.size / customers : 0;
+
+  return {
+    period,
+    window: w,
+    revenue,
+    revenueDelta: deltaRatio(revenue, revenuePrev),
+    orders: ordersCount,
+    ordersDelta: deltaRatio(ordersCount, ordersCountPrev),
+    aov,
+    aovDelta: deltaRatio(aov, aovPrev),
+    customers,
+    customersDelta: deltaRatio(customers, customersPrev),
+    discountGiven,
+    discountGivenDelta: deltaRatio(discountGiven, discountGivenPrev),
+    repeatRate,
+    repeatCustomers: repeatCustomers.size,
+    newCustomers: customers - repeatCustomers.size,
+  };
+}
+
+/** Per-discount-code performance: uses, attributed revenue, total discount given. */
+export function getDiscountPerformance(period: PeriodKey) {
+  const w = getPeriodWindow(period);
+  const orders = listAllOrders().filter(
+    (o) =>
+      o.status === "paid" &&
+      o.couponCode &&
+      (o.paidAt ?? o.createdAt) >= w.from &&
+      (o.paidAt ?? o.createdAt) < w.to
+  );
+  const codes = listDiscounts();
+
+  const stats = new Map<
+    string,
+    { uses: number; revenue: number; discount: number }
+  >();
+  for (const o of orders) {
+    const key = (o.couponCode ?? "").toUpperCase();
+    if (!key) continue;
+    const cur = stats.get(key) ?? { uses: 0, revenue: 0, discount: 0 };
+    cur.uses += 1;
+    cur.revenue += o.finalAmount;
+    cur.discount += o.discountAmount ?? 0;
+    stats.set(key, cur);
+  }
+
+  return codes
+    .map((c) => {
+      const s = stats.get(c.code.toUpperCase()) ?? {
+        uses: 0,
+        revenue: 0,
+        discount: 0,
+      };
+      return {
+        code: c.code,
+        kind: c.kind,
+        value: c.value,
+        active: c.active,
+        totalUses: c.uses,
+        windowUses: s.uses,
+        windowRevenue: s.revenue,
+        windowDiscount: s.discount,
+        avgOrderValue: s.uses ? s.revenue / s.uses : 0,
+        expiresAt: c.expiresAt,
+        courseSlug: c.courseSlug,
+      };
+    })
+    .sort((a, b) => b.windowRevenue - a.windowRevenue);
+}
+
+/**
+ * Per-course conversion: how many users enrolled / paid / avg days to pay
+ * from signup. No traffic source data — conversion computed from signup→pay.
+ */
+export function getCourseConversion() {
+  const courses = listCourses();
+  const orders = listAllOrders();
+  const users = listUsers();
+  const userSignup = new Map<string, number>();
+  for (const u of users) userSignup.set(u.id, u.createdAt);
+
+  return courses.map((c) => {
+    const enrolls = listEnrollmentRecordsForCourse(c.slug);
+    const courseOrders = orders.filter((o) => {
+      if (!o.courseSlug) return false;
+      if (o.courseSlug === c.slug) return true;
+      return o.courseSlug.split(",").map((s) => s.trim()).includes(c.slug);
+    });
+    const paid = courseOrders.filter((o) => o.status === "paid");
+    const failed = courseOrders.filter((o) => o.status === "failed");
+    const pending = courseOrders.filter((o) => o.status === "pending");
+    const revenue = paid.reduce((s, o) => s + o.finalAmount, 0);
+
+    const daysToPayList: number[] = [];
+    for (const o of paid) {
+      const at = o.paidAt ?? o.createdAt;
+      const signup = userSignup.get(o.userId);
+      if (!signup) continue;
+      daysToPayList.push((at - signup) / DAY);
+    }
+    const avgDaysToPay = daysToPayList.length
+      ? daysToPayList.reduce((s, v) => s + v, 0) / daysToPayList.length
+      : null;
+
+    const attempted = courseOrders.length;
+    const paidConversion = attempted ? paid.length / attempted : 0;
+
+    return {
+      slug: c.slug,
+      title: c.title,
+      status: c.status,
+      price: c.price,
+      discountPrice: c.discountPrice,
+      enrolls: enrolls.length,
+      orders: attempted,
+      paid: paid.length,
+      pending: pending.length,
+      failed: failed.length,
+      paidConversion,
+      revenue,
+      avgDaysToPay,
+    };
+  });
+}
+
+/** Signup-month cohort × paid-revenue-per-user over time. */
+export function getCustomerCohorts() {
+  const users = listUsers();
+  const orders = listAllOrders().filter((o) => o.status === "paid");
+
+  const cohort = new Map<
+    string,
+    { size: number; paying: Set<string>; revenue: number; orders: number }
+  >();
+
+  const signupByUser = new Map<string, number>();
+  for (const u of users) signupByUser.set(u.id, u.createdAt);
+
+  for (const u of users) {
+    const d = new Date(u.createdAt);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const c = cohort.get(key) ?? {
+      size: 0,
+      paying: new Set<string>(),
+      revenue: 0,
+      orders: 0,
+    };
+    c.size += 1;
+    cohort.set(key, c);
+  }
+  for (const o of orders) {
+    const signup = signupByUser.get(o.userId);
+    if (!signup) continue;
+    const d = new Date(signup);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const c = cohort.get(key);
+    if (!c) continue;
+    c.paying.add(o.userId);
+    c.revenue += o.finalAmount;
+    c.orders += 1;
+  }
+
+  return [...cohort.entries()]
+    .map(([month, v]) => ({
+      month,
+      size: v.size,
+      paying: v.paying.size,
+      revenue: v.revenue,
+      orders: v.orders,
+      ltv: v.paying.size ? v.revenue / v.paying.size : 0,
+      conversion: v.size ? v.paying.size / v.size : 0,
+    }))
+    .sort((a, b) => (a.month < b.month ? 1 : -1))
+    .slice(0, 12);
+}
+
+/** Top spenders — customers ranked by total paid amount. */
+export function getTopCustomers(limit = 10) {
+  const orders = listAllOrders().filter((o) => o.status === "paid");
+  const users = listUsers();
+  const byUser = new Map<string, { revenue: number; orders: number }>();
+  for (const o of orders) {
+    const cur = byUser.get(o.userId) ?? { revenue: 0, orders: 0 };
+    cur.revenue += o.finalAmount;
+    cur.orders += 1;
+    byUser.set(o.userId, cur);
+  }
+  return [...byUser.entries()]
+    .map(([userId, v]) => {
+      const u = users.find((x) => x.id === userId);
+      return {
+        userId,
+        name: u?.name ?? "(کاربر حذف شده)",
+        phone: u?.phone ?? "",
+        revenue: v.revenue,
+        orders: v.orders,
+      };
+    })
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
+}
+
+/** Repeat-purchase funnel: % of customers with 1, 2, 3+ paid orders. */
+export function getRepeatPurchaseFunnel() {
+  const orders = listAllOrders().filter((o) => o.status === "paid");
+  const byUser = new Map<string, number>();
+  for (const o of orders) byUser.set(o.userId, (byUser.get(o.userId) ?? 0) + 1);
+
+  const total = byUser.size;
+  const one = [...byUser.values()].filter((v) => v >= 1).length;
+  const two = [...byUser.values()].filter((v) => v >= 2).length;
+  const three = [...byUser.values()].filter((v) => v >= 3).length;
+
+  return [
+    { label: "حداقل ۱ خرید", value: one, rate: 1 },
+    {
+      label: "حداقل ۲ خرید",
+      value: two,
+      rate: total ? two / total : 0,
+    },
+    {
+      label: "حداقل ۳ خرید",
+      value: three,
+      rate: total ? three / total : 0,
+    },
+  ];
 }
 
 // --- Helper for order buckets by month (for revenue page) ------------------

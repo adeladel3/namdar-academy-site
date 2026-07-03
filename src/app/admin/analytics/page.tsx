@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { Card, CardHeader } from "@/components/admin/ui";
 import { Icon } from "@/components/admin/Icons";
 import {
@@ -42,7 +42,14 @@ export default function AnalyticsOverview() {
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <AnalyticsNav
+          href="/admin/analytics/marketing"
+          icon={<Icon.Money width={18} height={18} />}
+          title="فروش و مارکتینگ"
+          sub="KPIها، تخفیف‌ها، کوهورت، نرخ تبدیل دوره‌ها"
+          highlight
+        />
         <AnalyticsNav
           href="/admin/analytics/revenue"
           icon={<Icon.Money width={18} height={18} />}
@@ -58,7 +65,7 @@ export default function AnalyticsOverview() {
         <AnalyticsNav
           href="/admin/analytics/retention"
           icon={<Icon.Users width={18} height={18} />}
-          title="Retention"
+          title="نگهداشت"
           sub="پایداری کوهورت ماهانه"
         />
         <AnalyticsNav
@@ -235,24 +242,38 @@ function AnalyticsNav({
   icon,
   title,
   sub,
+  highlight,
 }: {
   href: string;
   icon: React.ReactNode;
   title: string;
   sub: string;
+  highlight?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="p-5 rounded-3xl bg-white border border-[#e5eaf5] hover:border-[#1b3c8a] transition block"
+      className={
+        highlight
+          ? "p-5 rounded-3xl bg-gradient-to-br from-[#1b3c8a] to-[#49bbbd] text-white hover:opacity-95 transition block"
+          : "p-5 rounded-3xl bg-white border border-[#e5eaf5] hover:border-[#1b3c8a] transition block"
+      }
     >
       <div className="flex items-center gap-3 mb-2">
-        <span className="w-9 h-9 rounded-xl bg-[#eef4ff] text-[#1b3c8a] flex items-center justify-center">
+        <span
+          className={
+            highlight
+              ? "w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center"
+              : "w-9 h-9 rounded-xl bg-[#eef4ff] text-[#1b3c8a] flex items-center justify-center"
+          }
+        >
           {icon}
         </span>
         <h3 className="font-bold">{title}</h3>
       </div>
-      <p className="text-xs text-[#010514]/55">{sub}</p>
+      <p className={highlight ? "text-xs text-white/85" : "text-xs text-[#010514]/55"}>
+        {sub}
+      </p>
     </Link>
   );
 }

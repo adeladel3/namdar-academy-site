@@ -1,0 +1,3 @@
+module.exports=[47102,a=>{"use strict";var b=a.i(87924),c=a.i(72131);a.s(["default",0,function({html:a,className:d}){let e=(0,c.useRef)(null);return(0,c.useEffect)(()=>{let b=e.current;if(!b)return;b.innerHTML=a;let c=Array.from(b.querySelectorAll("script")),d=!1,f=a=>{if(d||a>=c.length)return;let b=c[a],e=document.createElement("script");for(let a of Array.from(b.attributes))e.setAttribute(a.name,a.value);e.text=b.textContent??"";let g=()=>f(a+1);b.src&&(e.onload=g,e.onerror=g),b.parentNode?.replaceChild(e,b),b.src||g()};return f(0),()=>{d=!0,b.innerHTML=""}},[a]),(0,b.jsx)("div",{ref:e,className:d})}])}];
+
+//# sourceMappingURL=src_components_LegacyHtml_tsx_0vxoqkr._.js.map

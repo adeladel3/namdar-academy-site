@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { generateId, upsertFaq } from "@/lib/db";
+import { sanitizeRichHtml } from "@/lib/sanitize-html";
 
 export async function POST(req: Request) {
-  const guard = await requireStaff();
+  const guard = await requireStaff(req);
   if (!guard.ok) return guard.response;
 
   let body: { question?: string; answer?: string; order?: number; published?: boolean };
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
   upsertFaq({
     id,
     question: body.question.trim(),
-    answer: body.answer ?? "",
+    answer: sanitizeRichHtml(body.answer ?? ""),
     order: body.order ?? 0,
     published: body.published !== false,
   });

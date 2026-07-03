@@ -1,0 +1,3 @@
+{
+  "/admin/courses/[slug]/analytics/lesson/[lessonId]/page": "app/admin/courses/[slug]/analytics/lesson/[lessonId]/page.js"
+}

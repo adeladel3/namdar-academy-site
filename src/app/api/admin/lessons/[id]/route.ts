@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { deleteLesson, getLesson, upsertLesson } from "@/lib/db";
+import { sanitizeRichHtml } from "@/lib/sanitize-html";
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const guard = await requireStaff();
+  const guard = await requireStaff(req);
   if (!guard.ok) return guard.response;
 
   const { id } = await params;
@@ -49,7 +50,7 @@ export async function PATCH(
       body.content === undefined
         ? l.content
         : body.content
-        ? body.content
+        ? sanitizeRichHtml(body.content)
         : undefined,
     order: typeof body.order === "number" ? body.order : l.order,
   });
@@ -57,10 +58,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const guard = await requireStaff();
+  const guard = await requireStaff(req);
   if (!guard.ok) return guard.response;
   const { id } = await params;
   if (!getLesson(id))

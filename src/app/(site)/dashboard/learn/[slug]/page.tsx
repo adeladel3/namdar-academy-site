@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 import { notFound, redirect } from "next/navigation";
 import { getSession, isStaff } from "@/lib/auth";
 import {
@@ -24,6 +24,13 @@ export default async function LearnOverviewPage({
 
   const course = getCourse(slug);
   if (!course) notFound();
+
+  // دوره‌های اسپات‌پلیر با پخش‌کننده داخلی ارائه نمی‌شوند؛ کاربر به صفحه
+  // کد لایسنس هدایت می‌شود. این بررسی همه ورودی‌ها (لینک مستقیم، دکمه ورود
+  // به دوره) را پوشش می‌دهد.
+  if (course.spotPlayerCourseId?.trim()) {
+    redirect(`/dashboard/license/${slug}`);
+  }
 
   if (!isEnrolled(session.userId, slug) && !isStaff(session)) {
     redirect(`/courses/${slug}?not_enrolled=1`);

@@ -1,0 +1,3 @@
+{
+  "/api/user/2fa/setup/route": "app/api/user/2fa/setup/route.js"
+}

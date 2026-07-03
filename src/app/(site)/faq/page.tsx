@@ -1,5 +1,5 @@
 import { listFaqs } from "@/lib/db";
-import Link from "next/link";
+import Link from "@/components/SafeLink";
 
 export const dynamic = "force-dynamic";
 

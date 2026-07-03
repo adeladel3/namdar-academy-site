@@ -227,4 +227,16 @@ export const Icon = {
       <polyline points="22,6 12,13 2,6" />
     </svg>
   ),
+  Ticket: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}>
+      <path d="M21 10.5V7a2 2 0 0 0-2-2h-3.5a2 2 0 0 1-4 0H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3.5a2.5 2.5 0 0 1 0-5Z" />
+    </svg>
+  ),
+  Info: (p: SVGProps<SVGSVGElement>) => (
+    <svg {...base} {...p}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-5" />
+      <circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  ),
 };

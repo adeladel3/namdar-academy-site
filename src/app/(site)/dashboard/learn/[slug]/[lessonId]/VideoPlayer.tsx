@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
+const FA_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+const toFa = (s: string | number) =>
+  String(s).replace(/\d/g, (d) => FA_DIGITS[Number(d)]);
+
 type Props = {
   lessonId: string;
   videoUrl?: string;
@@ -19,9 +23,13 @@ export default function VideoPlayer({
 }: Props) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [completed, setCompleted] = useState(initialCompleted);
+  const [watchedPct, setWatchedPct] = useState(0);
   const lastSentRef = useRef(0);
   const lastDeltaTsRef = useRef(0);
-  const sessionIdRef = useRef<string>(
+  // Lazy state initializer keeps the impure crypto/Math.random call out of
+  // the render path so React Compiler can optimize this component. The id is
+  // stable for the component's lifetime.
+  const [sessionId] = useState(() =>
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2)
@@ -29,15 +37,26 @@ export default function VideoPlayer({
 
   useEffect(() => {
     const v = ref.current;
-    if (!v || !initialPositionSec) return;
+    if (!v) return;
     const onLoaded = () => {
       if (initialPositionSec > 0 && initialPositionSec < v.duration - 3) {
         v.currentTime = initialPositionSec;
+      }
+      if (v.duration && isFinite(v.duration)) {
+        const pct = Math.max(
+          0,
+          Math.min(100, Math.floor((v.currentTime / v.duration) * 100))
+        );
+        setWatchedPct((cur) => (pct > cur ? pct : cur));
       }
     };
     v.addEventListener("loadedmetadata", onLoaded);
     return () => v.removeEventListener("loadedmetadata", onLoaded);
   }, [initialPositionSec]);
+
+  useEffect(() => {
+    if (initialCompleted) setWatchedPct(100);
+  }, [initialCompleted]);
 
   async function send(patch: {
     positionSec?: number;
@@ -52,7 +71,7 @@ export default function VideoPlayer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lessonId,
-          sessionId: sessionIdRef.current,
+          sessionId,
           ...patch,
         }),
       });
@@ -72,9 +91,19 @@ export default function VideoPlayer({
     return v.paused ? 0 : Math.max(0, Math.min(delta, 15));
   }
 
+  function updatePct(v: HTMLVideoElement) {
+    if (!v.duration || !isFinite(v.duration)) return;
+    const pct = Math.max(
+      0,
+      Math.min(100, Math.floor((v.currentTime / v.duration) * 100))
+    );
+    setWatchedPct((cur) => (pct > cur ? pct : cur));
+  }
+
   function onTimeUpdate() {
     const v = ref.current;
     if (!v) return;
+    updatePct(v);
     const now = Date.now();
     if (now - lastSentRef.current < 8000) return;
     lastSentRef.current = now;
@@ -115,17 +144,18 @@ export default function VideoPlayer({
   }
 
   function onEnded() {
+    const v = ref.current;
+    const duration = v?.duration ?? 0;
+    const reachedEnd =
+      duration > 0 && (v?.currentTime ?? 0) >= duration - 1.5;
+    if (!reachedEnd) return;
     if (!completed) setCompleted(true);
+    setWatchedPct(100);
     send({
       completed: true,
-      positionSec: Math.floor(ref.current?.duration ?? 0),
+      positionSec: Math.floor(duration),
       event: "end",
     });
-  }
-
-  function markComplete() {
-    setCompleted(true);
-    send({ completed: true });
   }
 
   if (!videoUrl) {
@@ -157,29 +187,47 @@ export default function VideoPlayer({
         preload="metadata"
       />
       {canTrack && (
-        <div className="mt-3 flex items-center justify-between text-sm">
-          <div
-            className={`inline-flex items-center gap-2 ${
-              completed ? "text-green-700 font-bold" : "text-[#010514]/55"
-            }`}
-          >
-            {completed ? (
-              <>
-                <span>✓</span> این درس را کامل کرده‌اید
-              </>
-            ) : (
-              <span>پیشرفت شما به‌صورت خودکار ذخیره می‌شود</span>
-            )}
-          </div>
-          {!completed && (
-            <button
-              type="button"
-              onClick={markComplete}
-              className="px-4 py-2 rounded-full text-xs bg-green-600 text-white font-bold hover:opacity-90 transition"
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-sm mb-2">
+            <div
+              className={`inline-flex items-center gap-2 ${
+                completed ? "text-green-700 font-bold" : "text-[#010514]/65"
+              }`}
             >
-              علامت‌گذاری به عنوان خوانده‌شده
-            </button>
-          )}
+              {completed ? (
+                <>
+                  <span>✓</span> این درس کامل تماشا شد — درس بعدی باز شد.
+                </>
+              ) : (
+                <span>
+                  برای باز شدن درس بعدی، ویدیو را تا انتها (۱۰۰٪) تماشا کنید.
+                </span>
+              )}
+            </div>
+            <div
+              className={`font-bold font-mono tabular-nums ${
+                completed ? "text-green-700" : "text-[#1b3c8a]"
+              }`}
+              dir="ltr"
+              aria-label="درصد تماشا شده"
+            >
+              {toFa(completed ? 100 : watchedPct)}٪
+            </div>
+          </div>
+          <div
+            className="h-2 rounded-full bg-[#eef2f7] overflow-hidden"
+            role="progressbar"
+            aria-valuenow={completed ? 100 : watchedPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className={`h-full transition-all ${
+                completed ? "bg-green-600" : "bg-[#1b3c8a]"
+              }`}
+              style={{ width: `${completed ? 100 : watchedPct}%` }}
+            />
+          </div>
         </div>
       )}
     </div>

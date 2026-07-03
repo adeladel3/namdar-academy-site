@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { enroll, getOrder, logAudit, updateOrder } from "@/lib/db";
+import { ensureLicenseForEnrollment } from "@/lib/spotplayer";
 
 export async function POST(
   _req: Request,
@@ -21,10 +22,16 @@ export async function POST(
     paymentMethod: "manual",
     refNum: order.refNum ?? `MANUAL-${id}`,
   });
-  enroll(order.userId, order.courseSlug, {
+  const enrollment = enroll(order.userId, order.courseSlug, {
     source: "purchase",
     orderId: id,
   });
+  // دوره اسپات‌پلیر: ساخت لایسنس پس از تأیید دستی پرداخت (best-effort).
+  try {
+    await ensureLicenseForEnrollment(enrollment.id);
+  } catch (e) {
+    console.error("[spotplayer] ensure after mark-paid failed:", e);
+  }
 
   logAudit({
     actorId: guard.session.userId,
