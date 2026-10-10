@@ -11,11 +11,12 @@ import {
 } from "@/lib/db";
 import { readReferralCookie } from "@/lib/referral";
 import {
-  getPublicBaseUrl,
-  isSepConfigured,
-  requestToken,
+  getPaymentClient,
+  isPaymentConfigured,
   tomanToRial,
-} from "@/lib/saman";
+  getActiveProvider,
+} from "@/lib/payment";
+import { getPublicBaseUrl } from "@/lib/saman";
 
 /**
  * Multi-item cart checkout. For a single item we follow the usual one-order
@@ -119,6 +120,8 @@ export async function POST(req: Request) {
         : 0;
   }
 
+  const provider = getActiveProvider();
+
   createOrder({
     id: orderId,
     userId: session.userId,
@@ -127,7 +130,7 @@ export async function POST(req: Request) {
     discountAmount,
     finalAmount,
     status: "pending",
-    paymentMethod: "sep",
+    paymentMethod: provider,
     couponCode: body.couponCode ? body.couponCode.toUpperCase() : undefined,
     createdAt: Date.now(),
     ...(attributable
@@ -143,27 +146,27 @@ export async function POST(req: Request) {
   const baseUrl = getPublicBaseUrl(req.url);
   const callbackUrl = new URL("/api/payment/callback", baseUrl).toString();
 
-  if (!isSepConfigured()) {
+  if (!isPaymentConfigured()) {
     // Dev simulate
     if (body.couponCode) incrementDiscountUses(body.couponCode);
     const url = new URL("/api/payment/callback", baseUrl || new URL(req.url).origin);
-    url.searchParams.set("ResNum", orderId);
-    url.searchParams.set("State", "OK");
-    url.searchParams.set("RefNum", "DEV-" + orderId);
-    url.searchParams.set("TraceNo", String(Math.floor(Math.random() * 1e9)));
-    url.searchParams.set("AffectiveAmount", String(tomanToRial(finalAmount)));
+    url.searchParams.set("orderId", orderId);
+    url.searchParams.set("state", "OK");
+    url.searchParams.set("paymentToken", "DEV-" + orderId);
+    url.searchParams.set("Amount", String(tomanToRial(finalAmount, provider)));
     return NextResponse.json({ paymentUrl: url.toString(), simulated: true });
   }
 
   if (finalAmount <= 0) {
     return NextResponse.json(
       { error: "مبلغ نهایی برای پرداخت نامعتبر است" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const token = await requestToken({
-    amountRial: tomanToRial(finalAmount),
+  const client = getPaymentClient(provider);
+  const token = await client.requestToken({
+    amountRial: tomanToRial(finalAmount, provider),
     orderId,
     callbackUrl,
     cellNumber: session.phone,
@@ -171,7 +174,7 @@ export async function POST(req: Request) {
   if (!token.ok) {
     return NextResponse.json(
       { error: token.message, code: token.code },
-      { status: 502 }
+      { status: 502 },
     );
   }
   if (body.couponCode) incrementDiscountUses(body.couponCode);

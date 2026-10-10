@@ -4,15 +4,17 @@ import {
   getOrder,
   getSeminar,
   incrementLinkPaidOrders,
+  logAudit,
   registerSeminar,
   updateOrder,
 } from "@/lib/db";
 import {
-  isSepConfigured,
-  sepStateMessage,
+  getPaymentClient,
   tomanToRial,
-  verifyTransaction,
-} from "@/lib/saman";
+  isPaymentConfigured,
+  type PaymentProvider,
+} from "@/lib/payment";
+import { sepStateMessage } from "@/lib/saman";
 import { ensureLicenseForEnrollment } from "@/lib/spotplayer";
 
 function resultUrl(
@@ -38,81 +40,141 @@ async function handle(req: Request, fields: URLSearchParams) {
   const isLocalDev =
     process.env.NODE_ENV !== "production" &&
     /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(host);
+
+  // Universal callback parameters — work for both SEP and SnappPay
   const orderId = fields.get("ResNum") ?? fields.get("orderId");
-  const state = fields.get("State");
-  const refNum = fields.get("RefNum");
+  const state = fields.get("State") ?? fields.get("state");
+  const refNum = fields.get("RefNum") ?? fields.get("paymentToken");
   const traceNo = fields.get("TraceNo") ?? undefined;
   const securePan = fields.get("SecurePan") ?? undefined;
   const hashedCardNumber = fields.get("HashedCardNumber") ?? undefined;
 
   if (!orderId) {
+    logAudit({
+      actorId: "system",
+      action: "payment.callback.missing_order_id",
+      targetType: "order",
+      targetId: "unknown",
+      metadata: { fields: Object.fromEntries(fields.entries()) },
+    });
     return NextResponse.redirect(
       resultUrl(origin, {
         status: "failed",
         reason: "شناسه سفارش در پاسخ بانک یافت نشد",
-      })
+      }),
     );
   }
   const order = getOrder(orderId);
   if (!order) {
+    logAudit({
+      actorId: "system",
+      action: "payment.callback.order_not_found",
+      targetType: "order",
+      targetId: orderId,
+    });
     return NextResponse.redirect(
       resultUrl(origin, {
         status: "failed",
         orderId,
         reason: "سفارش یافت نشد",
-      })
+      }),
     );
   }
 
+  const provider = (order.paymentMethod === "snappay" ? "snappay" : "sep") as PaymentProvider;
+
   // Idempotency: if this order is already finalized, just show the stored outcome.
   if (order.status === "paid") {
+    logAudit({
+      actorId: "system",
+      action: "payment.callback.already_paid",
+      targetType: "order",
+      targetId: orderId,
+      metadata: { refNum: order.refNum },
+    });
     return NextResponse.redirect(
       resultUrl(origin, {
         status: "success",
         orderId,
         refNum: order.refNum,
         amount: order.finalAmount,
-      })
+      }),
     );
   }
   if (order.status === "failed") {
+    logAudit({
+      actorId: "system",
+      action: "payment.callback.already_failed",
+      targetType: "order",
+      targetId: orderId,
+    });
     return NextResponse.redirect(
       resultUrl(origin, {
         status: "failed",
         orderId,
         reason: sepStateMessage(state),
-      })
+      }),
     );
   }
 
   if (state !== "OK" || !refNum) {
     updateOrder(orderId, { status: "failed" });
+    logAudit({
+      actorId: "system",
+      action: "payment.callback.user_cancel_or_error",
+      targetType: "order",
+      targetId: orderId,
+      metadata: { state, provider },
+    });
     return NextResponse.redirect(
       resultUrl(origin, {
         status: "failed",
         orderId,
         reason: sepStateMessage(state),
-      })
+      }),
     );
   }
 
-  const expectedRial = tomanToRial(order.finalAmount);
+  const expectedRial = tomanToRial(order.finalAmount, provider);
   const reportedAmount = Number(
-    fields.get("AffectiveAmount") ?? fields.get("Amount") ?? 0
+    fields.get("AffectiveAmount") ?? fields.get("Amount") ?? 0,
   );
-  if (reportedAmount && reportedAmount !== expectedRial) {
+
+  // For SnappPay, amount checking happens in verify response, not callback params
+  if (provider === "sep" && reportedAmount && reportedAmount !== expectedRial) {
     updateOrder(orderId, { status: "failed" });
+    logAudit({
+      actorId: "system",
+      action: "payment.callback.amount_mismatch",
+      targetType: "order",
+      targetId: orderId,
+      metadata: { expected: expectedRial, reported: reportedAmount, provider },
+    });
     return NextResponse.redirect(
       resultUrl(origin, {
         status: "failed",
         orderId,
         reason: "مبلغ تراکنش با سفارش مطابقت ندارد",
-      })
+      }),
     );
   }
 
-  if (isSepConfigured() && !isLocalDev) {
-    const v = await verifyTransaction({ refNum });
+  // Server-side verification with the gateway
+  if (isPaymentConfigured() && !isLocalDev) {
+    const client = getPaymentClient(provider);
+    const v = await client.verify({
+      refNum,
+      providerToken: provider === "snappay" ? refNum : undefined,
+    });
+
+    logAudit({
+      actorId: "system",
+      action: `payment.${provider}.verify`,
+      targetType: "order",
+      targetId: orderId,
+      metadata: { success: v.ok, refNum, provider },
+    });
+
     if (!v.ok) {
       updateOrder(orderId, { status: "failed" });
       return NextResponse.redirect(
@@ -120,17 +182,28 @@ async function handle(req: Request, fields: URLSearchParams) {
           status: "failed",
           orderId,
           reason: v.message,
-        })
+        }),
       );
     }
     if (v.amountRial && v.amountRial !== expectedRial) {
       updateOrder(orderId, { status: "failed" });
+      logAudit({
+        actorId: "system",
+        action: `payment.${provider}.amount_mismatch_after_verify`,
+        targetType: "order",
+        targetId: orderId,
+        metadata: {
+          expected: expectedRial,
+          verified: v.amountRial,
+          provider,
+        },
+      });
       return NextResponse.redirect(
         resultUrl(origin, {
           status: "failed",
           orderId,
           reason: "مبلغ تأیید شده درگاه با سفارش مطابقت ندارد",
-        })
+        }),
       );
     }
   }
@@ -223,7 +296,7 @@ export async function GET(req: Request) {
   const isLocalDev =
     process.env.NODE_ENV !== "production" &&
     /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(host);
-  if (process.env.NODE_ENV === "production" || (isSepConfigured() && !isLocalDev)) {
+  if (process.env.NODE_ENV === "production" || (isPaymentConfigured() && !isLocalDev)) {
     return NextResponse.redirect(
       resultUrl(origin, {
         status: "failed",
