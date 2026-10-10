@@ -272,7 +272,7 @@ export type OrderRecord = {
   discountAmount: number;
   finalAmount: number;
   status: OrderStatus;
-  paymentMethod: "sep" | "manual" | "grant";
+  paymentMethod: "sep" | "snappay" | "manual" | "grant";
   refNum?: string;
   authority?: string;
   traceNo?: string;

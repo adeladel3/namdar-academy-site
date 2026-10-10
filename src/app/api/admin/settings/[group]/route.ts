@@ -29,6 +29,10 @@ const SECRET_KEY_SUBSTRINGS = [
   "terminalid",
   "terminal_id",
   "smtppassword",
+  "clientsecret",
+  "client_secret",
+  "snappaypassword",
+  "snappay_password",
 ];
 
 function isSecretKey(fullKey: string): boolean {

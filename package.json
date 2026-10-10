@@ -11,6 +11,9 @@
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "deploy:bundle": "next build && tar -czf deploy/namdar-build.tar.gz .next/standalone .next/static public",
     "db:backup": "cp data/db.json data/db.json.$(date +%Y%m%d-%H%M%S).bak",
     "clean:mac": "find . \\( -name '._*' -o -name '.DS_Store' \\) -not -path './node_modules/*' -not -path './.next/*' -not -path './.git/*' -delete"
@@ -29,10 +32,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/ui": "^5.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": ">=20.0.0"
